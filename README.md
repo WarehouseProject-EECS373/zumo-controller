@@ -23,6 +23,18 @@ To be implemented, a placeholder for the future (a rough outline)
   - Manages main internal state (idle, driving, picking up, etc.)
   - Tells Box Interface to engage
 
+## Peripheral Mapping
+
+Which peripherals are in use on which pins
+
+### Timers
+
+- TIM2
+  - dedicated to `rmkernel` and `HAL`
+- TIM3
+  - Motor PWM
+  - 2 output channels, PB4 and PB6
+
 ## Directory Structure
 
 ```bash
