@@ -1,0 +1,3 @@
+build/
+debug/
+modules/stm32-cmake/
