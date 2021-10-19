@@ -25,6 +25,8 @@ To be implemented, a placeholder for the future (a rough outline)
 
 ## Peripheral Mapping
 
+[Nucleo-L4R5ZI Pinout](https://os.mbed.com/platforms/NUCLEO-L4R5ZI/)
+
 Which peripherals are in use on which pins
 
 ### Timers
@@ -80,8 +82,15 @@ $ tree -L 2 # with modification
 - `ObKo/stm32-cmake`
 
   ```bash
-  git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake 
+  git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake
   ```
+
+## Installation
+
+1. Install CMake and STLink (see above)
+2. `git clone https://github.com/WarehouseProject-EECS373/zumo-controller.git`
+3. `git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake`
+4. All set, `make debug` to build, `make flash` to program device
 
 ## Usage
 
@@ -97,7 +106,7 @@ Not exactly sure what's going on but this has worked for me in the past.
 
 Use `make flash`. Not sure if configuration changes on Windows. If you're going to change anything in the Makefile, make a new target (e.g. `win-flash`) instead of just modifying the existing one.
 
-## Development
+## Examples
 
 Lots of examples can be found in <https://github.com/rkalnins/rmkernel-dev>
 
