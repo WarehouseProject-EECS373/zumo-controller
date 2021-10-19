@@ -51,47 +51,6 @@ extern void PWM_Init()
 
     HAL_TIM_PWM_ConfigChannel(&htim3, &tim3_oc, TIM_CHANNEL_1);
     HAL_TIM_PWM_ConfigChannel(&htim3, &tim3_oc, TIM_CHANNEL_2);
-
-    // TIM_ClockConfigTypeDef tim_clock_cfg = {0};
-    // tim_clock_cfg.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    // HAL_TIM_ConfigClockSource(&htim3, &tim_clock_cfg);
-
-    //
-    //  TIM4
-    //
-
-    // htim4.Instance = TIM4;
-    // htim4.Init.Prescaler = PRESCALER;
-    // htim3.Channel = TIM_CHANNEL_1;
-    // htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-    // htim4.Init.Period = 400;
-    // htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    // htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-
-    // TIM_OC_InitTypeDef tim4_oc = {0};
-
-    // tim4_oc.OCMode = TIM_OCMODE_PWM1;
-    // tim4_oc.Pulse = 100;
-    // tim4_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
-    // tim4_oc.OCFastMode = TIM_OCFAST_DISABLE;
-
-    // GPIO_InitTypeDef gpio_cfg = {0};
-
-    // gpio_cfg.Pin = GPIO_PIN_6;
-    // gpio_cfg.Mode = GPIO_MODE_AF_PP;
-    // gpio_cfg.Alternate = GPIO_AF2_TIM4;
-    // gpio_cfg.Pull = GPIO_NOPULL;
-    // gpio_cfg.Speed = GPIO_SPEED_LOW;
-
-    // HAL_GPIO_Init(GPIOB, &gpio_cfg);
-
-    //
-    //  Common, and init
-    //
-
-    // HAL_TIM_ConfigClockSource(&htim4, &tim_clock_cfg);
-
-    // HAL_TIM_PWM_Init(&htim4);
 }
 
 extern void PWM_Start()
