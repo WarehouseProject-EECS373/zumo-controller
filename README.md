@@ -1,6 +1,6 @@
 # Zumo Controller
 
-Integrated code for deployment on Zumo robots. Let's keep component-level testing in other repositories.
+Integrated code for deployment on Zumo robots. Let's keep component-level testing in other repositories or other branches.
 
 ## Project Architecture
 
