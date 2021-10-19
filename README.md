@@ -10,9 +10,18 @@ With AOs, it's really easy to diagram and plan systems using UML Activity diagra
 To be implemented, a placeholder for the future (a rough outline)
 
 - Drive Subsystem
+  - Gets Sensor readings and updates setpoints
+  - Manages PWM
 - Path Tracking Subsystem
+  - Reads from sensor every _n_ ms and sends data to Drive Subsystem
 - Box Interface Subsystem
+  - Controls electromagnet
 - Communications Subsystem
+  - Realtime data logging/capture
+  - Wireless comms
+- Central Control
+  - Manages main internal state (idle, driving, picking up, etc.)
+  - Tells Box Interface to engage
 
 ## Directory Structure
 
