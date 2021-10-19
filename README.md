@@ -23,6 +23,24 @@ To be implemented, a placeholder for the future (a rough outline)
   - Manages main internal state (idle, driving, picking up, etc.)
   - Tells Box Interface to engage
 
+## Creating AOs
+
+- File naming: `<name>_ao.c/.h`
+- Add `<name>_ao.c` to `CMakeLists.txt`
+- AO source file should contain:
+  - All related interrupts
+  - An Event Handler
+  - Static declarations
+  - Any peripheral init/start functions
+- AO header file should only contain
+  - EventHandler function
+  - Peripheral Init/Start functions
+- Required messages defined in `app_defs.h`
+- Required defines, message ids, etc. in `app_defs.h`
+- Use `ACTIVE_OBJECT_EXTERN` macro to create an extern AO declaration in `app_defs.h`
+- Use `ACTIVE_OBJECT_DECL` macro in `main.c` to declare
+- Use `AO_INIT` macro in `main()` to initialize
+
 ## Peripheral Mapping
 
 [Nucleo-L4R5ZI Pinout](https://os.mbed.com/platforms/NUCLEO-L4R5ZI/)
