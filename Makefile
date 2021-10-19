@@ -1,5 +1,12 @@
-all : build debug flash
-.PHONY: build debug flash
+all : clean build debug flash
+.PHONY: clean build debug flash
+
+fullclean :
+	rm -rf build/ debug/
+
+clean :
+	$(MAKE) clean -C debug
+	$(MAKE) clean -C build
 
 build :
 	cmake -Bbuild && $(MAKE) -C build

@@ -22,15 +22,6 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
         // check debounce
         if (!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
         {
-            // send message to the following AOs
-            Message_t reset_msg = {.id = PUSH_BUTTON_PRESSED_MSG_ID, .msg_size = sizeof(Message_t)};
-            MsgQueuePut(&data_producer_ao, (void *)&reset_msg);
-            MsgQueuePut(&averager_ao, (void *)&reset_msg);
-            MsgQueuePut(&differentiator_ao, (void *)&reset_msg);
-            MsgQueuePut(&integrator_ao, (void *)&reset_msg);
-
-            time_set = true;
-            last_time = OSGetTime();
         }
 
         // must clear interrupt
@@ -44,18 +35,6 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 extern void GPIO_OutputInit()
 {
     GPIO_InitTypeDef gpio_cfg;
-
-    gpio_cfg.Pin = GPIO_PIN_5;
-    gpio_cfg.Mode = GPIO_MODE_ANALOG;
-    gpio_cfg.Pull = GPIO_NOPULL;
-
-    HAL_GPIO_Init(GPIOA, &gpio_cfg);
-
-    gpio_cfg.Pin = GPIO_PIN_4;
-    gpio_cfg.Mode = GPIO_MODE_ANALOG;
-    gpio_cfg.Pull = GPIO_NOPULL;
-
-    HAL_GPIO_Init(GPIOA, &gpio_cfg);
 
     gpio_cfg.Pin = GPIO_PIN_7;
     gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;

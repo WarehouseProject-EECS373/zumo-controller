@@ -26,11 +26,8 @@ set(PROJECT_SOURCES
     src/app_defs.h
 
     src/main.c
-    src/math_ao.c
     src/pwm_ao.c
-    src/dac_ao.c
     src/gpio_ao.c
-    src/uart_ao.c
     src/os_port_arm_m4.c
     src/rmk_hal_clock_cfg.c
 )
@@ -51,8 +48,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::L4::TIMEx
     HAL::STM32::L4::PWR
     HAL::STM32::L4::PWREx
-    HAL::STM32::L4::DAC
-    HAL::STM32::L4::UART
     CMSIS::STM32::L4
     STM32::NoSys)
 
