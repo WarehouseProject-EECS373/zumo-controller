@@ -29,9 +29,9 @@ extern OS_t os;
 static TimedEventSimple_t hb_event;
 static Message_t hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)};
 
-void HeartbeatHandler(Message_t *msg)
+void HeartbeatHandler(Message_t* msg)
 {
-    if (HEARTBEAT_MSG_ID == msg->id)
+    if(HEARTBEAT_MSG_ID == msg->id)
     {
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
     }
@@ -73,11 +73,13 @@ int main()
     AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
 
     // create and schedule timed events.
-    TimedEventSimpleCreate(&hb_event, &heartbeat_ao, &hb_msg, HEARTBEAT_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    TimedEventSimpleCreate(&hb_event, &heartbeat_ao, &hb_msg, HEARTBEAT_PERIOD,
+                           TIMED_EVENT_PERIODIC_TYPE);
     SchedulerAddTimedEvent(&hb_event);
 
     // initialze kernel
-    OSCallbacksCfg_t os_callback_cfg = {.on_Idle = NULL, .on_Init = OnKernelInit, .on_SysTick = NULL};
+    OSCallbacksCfg_t os_callback_cfg = {
+        .on_Idle = NULL, .on_Init = OnKernelInit, .on_SysTick = NULL};
     KernelInit(&os, &os_callback_cfg);
 
     // enable interrupts again

@@ -14,18 +14,17 @@ static uint32_t used = 0;
  * @param status OS_MEMORY_SUCCESS if able to find a free block, OS_MEMORY_BLOCK_FULL otherwise
  * @return uint8_t* pointer to block of memory
  */
-extern uint8_t *
-OSMemoryBlockNew(uint16_t *key, BlockSize_t size, OSStatus_t *status)
+extern uint8_t* OSMemoryBlockNew(uint16_t* key, BlockSize_t size, OSStatus_t* status)
 {
     *key = 0;
-    uint8_t *block = NULL;
+    uint8_t* block = NULL;
 
     // create mask
     uint8_t block_bits = (size / MEMORY_BLOCK_32);
     uint32_t search_mask = (1U << block_bits) - 1;
 
     // make sure we're not going to loop forever
-    if (0 >= POOL_SIZE / 32 - size)
+    if(0 >= POOL_SIZE / 32 - size)
     {
         *status = OS_ERROR;
         return NULL;
@@ -36,10 +35,10 @@ OSMemoryBlockNew(uint16_t *key, BlockSize_t size, OSStatus_t *status)
     DISABLE_INTERRUPTS();
 
     // iterate and shift on multiple of of block size (i.e. the number of bits in "used")
-    for (uint8_t i = 0; i < (POOL_SIZE / 32) - block_bits; i += block_bits)
+    for(uint8_t i = 0; i < (POOL_SIZE / 32) - block_bits; i += block_bits)
     {
         // if an empty location is found, use it
-        if (0 == (search_mask & used))
+        if(0 == (search_mask & used))
         {
             block = pool + (i * MEMORY_BLOCK_32);
             used |= search_mask;
@@ -54,7 +53,7 @@ OSMemoryBlockNew(uint16_t *key, BlockSize_t size, OSStatus_t *status)
     ENABLE_INTERRUPTS();
 
     // set status
-    if (NULL == block)
+    if(NULL == block)
     {
         *status = OS_MEMORY_BLOCK_FULL;
     }
@@ -73,7 +72,7 @@ OSMemoryBlockNew(uint16_t *key, BlockSize_t size, OSStatus_t *status)
  * @param key
  * @return uint8_t* pointer to the block of memory
  */
-extern uint8_t *OSMemoryBlockGet(uint16_t key)
+extern uint8_t* OSMemoryBlockGet(uint16_t key)
 {
     // return the index of the block
     return pool + (key & 0xff);

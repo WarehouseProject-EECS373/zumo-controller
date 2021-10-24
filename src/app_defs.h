@@ -20,14 +20,14 @@ typedef struct DriveControlMessage_s
 // MESSAGE IDs
 //*****************************************************************/
 
-#define DATA_MSG_ID 0x0
+#define DATA_MSG_ID      0x0
 #define HEARTBEAT_MSG_ID 0x1
 
-#define DRIVE_CTL_IN_MSG_ID 0x10
-#define DRIVE_DISABLE_MSG_ID 0x11
-#define DRIVE_ENABLE_MSG_ID 0x12
+#define DRIVE_CTL_IN_MSG_ID         0x10
+#define DRIVE_DISABLE_MSG_ID        0x11
+#define DRIVE_ENABLE_MSG_ID         0x12
 #define DRIVE_TIMED_ACTIVITY_MSG_ID 0x13
-#define DRIVE_BASE_VELOCITY_MSG_ID 0x14
+#define DRIVE_BASE_VELOCITY_MSG_ID  0x14
 
 #define PUSH_BUTTON_PRESSED_MSG_ID 0x21
 
