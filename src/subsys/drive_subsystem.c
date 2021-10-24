@@ -10,22 +10,24 @@
 
 // TODO: check pin and peripheral assignments
 #define MOTOR_PWM_TIMER   TIM4
-#define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
 #define RIGHT_PWM_CHANNEL TIM_CHANNEL_2
+#define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
 
 // TODO: check pin assignments
 #define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_4
-#define PWM_LEFT_OUTPUT_PIN   GPIO_PIN_5
-#define PWM_LEFT_OUTPUT_PORT  GPIOB
 #define PWM_RIGHT_OUTPUT_PORT GPIOB
-#define PWM_LEFT_AF           GPIO_AF2_TIM3
 #define PWM_RIGHT_AF          GPIO_AF2_TIM3
 
+#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_5
+#define PWM_LEFT_OUTPUT_PORT GPIOB
+#define PWM_LEFT_AF          GPIO_AF2_TIM3
+
 // TODO: check pin assignments
-#define LEFT_DIR_PORT  GPIOA
 #define RIGHT_DIR_PORT GPIOA
-#define LEFT_DIR_PIN   GPIO_PIN_3
 #define RIGHT_DIR_PIN  GPIO_PIN_4
+
+#define LEFT_DIR_PORT GPIOA
+#define LEFT_DIR_PIN  GPIO_PIN_3
 
 // timer configuration
 #define PRESCALER     99 // 16e6MHz / (999 + 1) = 160KHz

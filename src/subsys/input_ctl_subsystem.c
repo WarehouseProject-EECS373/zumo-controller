@@ -5,8 +5,6 @@
 #include "app_defs.h"
 #include "stm/stm32l4xx.h"
 
-#include <os.h>
-
 #define USER_BUTTON_DEBOUNCE_TIME 100
 
 __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
