@@ -6,10 +6,14 @@
 #include "app_defs.h"
 #include "stm/stm32l4xx.h"
 
+// pin configurations for drive
+
+// TODO: check pin and peripheral assignments
 #define MOTOR_PWM_TIMER   TIM4
 #define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
 #define RIGHT_PWM_CHANNEL TIM_CHANNEL_2
 
+// TODO: check pin assignments
 #define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_4
 #define PWM_LEFT_OUTPUT_PIN   GPIO_PIN_5
 #define PWM_LEFT_OUTPUT_PORT  GPIOB
@@ -17,44 +21,66 @@
 #define PWM_LEFT_AF           GPIO_AF2_TIM3
 #define PWM_RIGHT_AF          GPIO_AF2_TIM3
 
+// TODO: check pin assignments
 #define LEFT_DIR_PORT  GPIOA
 #define RIGHT_DIR_PORT GPIOA
 #define LEFT_DIR_PIN   GPIO_PIN_3
 #define RIGHT_DIR_PIN  GPIO_PIN_4
 
+// timer configuration
 #define PRESCALER     99 // 16e6MHz / (999 + 1) = 160KHz
 #define PERIOD        100
 #define PWM_FREQ      (SystemCoreClock / ((PRESCALER) + 1))
 #define DUTY_PULSE(x) ((uint32_t)((x) * (PERIOD)))
 
+// drive subsystem states
 #define DRIVE_STATE_DISABLED 0
 #define DRIVE_STATE_ENABLED  1
 
+// drive modes for PID controller
+#define DRIVE_MODE_DRIVE  0
+#define DRIVE_MODE_ROTATE 1
+
+// change to fix hardware orientation (e.g. motor installed backwards)
 #define LEFT_MOTOR_ORIENTATION  1
 #define RIGHT_MOTOR_ORIENTATION 1
 
+#define DEADBAND          0.0
 #define MAX_DRIVE_PERCENT 100.0
 #define MIN_DRIVE_PERCENT -100.0
 
-#define BASE_VEL    0.0
-#define POSITION_kP 0.0
-#define POSITION_kI 0.0
-#define POSITION_kD 0.0
+// position control PID constants
+#define kP 0.0
+#define kI 0.0
+#define kD 0.0
 
-static float position_setpoint = 0.0;
-static float position_actual = 0.0;
-static float position_previous_error = 0.0;
-static float position_last_time = 0.0;
-static float position_i_acc = 0.0;
+static float base_output_percent = 0.0;
+
+// position control
+static float setpoint = 0.0;
+static float actual = 0.0;
+static float previous_error = 0.0;
+static float last_time = 0.0;
+static float i_accumulator = 0.0;
 
 static uint32_t state = DRIVE_STATE_DISABLED;
+static uint32_t drive_mode = DRIVE_MODE_DRIVE;
 
 static TIM_HandleTypeDef motor_pwm;
 
 void HandleDriveLineSetpoint(DriveControlMessage_t* msg);
 void HandleTimedActivity(Message_t* msg);
+void HandleSetpointChange(DriveSetpointMessage_t* msg);
+
+void Drive_SetOutputPercent(float left_percent_output, float right_percent_output);
+
+float ApplyDriveDeadband(float value);
 float BoundDrivePercent(float percent_output);
+
 void ClearPIDState();
+
+void ConfigureGPIO();
+void ConfigureTimer();
 
 float BoundDrivePercent(float output)
 {
@@ -72,65 +98,95 @@ float BoundDrivePercent(float output)
     }
 }
 
-void HandleDriveLineSetpoint(DriveControlMessage_t* msg)
+float ApplyDriveDeadband(float value)
 {
-    position_actual = msg->actual;
+    if(value < DEADBAND && value > -1 * DEADBAND)
+    {
+        return 0.0;
+    }
+    else
+    {
+        return value;
+    }
 }
 
 void HandleTimedActivity(Message_t* msg)
 {
     float current_time = (float)OSGetTime();
 
-    float position_error = position_setpoint - position_actual;
-    float p = position_error;
-    position_i_acc += position_error * (current_time - position_last_time);
-    float d = (position_error - position_previous_error) / (current_time - position_last_time);
+    float error = setpoint - actual;
+    float p = error;
+    i_accumulator += error * (current_time - last_time);
+    float d = (error - previous_error) / (current_time - last_time);
 
-    float motor_speed = POSITION_kP * p + POSITION_kI * position_i_acc + POSITION_kI * d;
+    float motor_speed = kP * p + kI * i_accumulator + kI * d;
 
-    float left_output = BASE_VEL + motor_speed;
-    float right_output = BASE_VEL - motor_speed;
+    float left_output = base_output_percent + motor_speed;
+    float right_output = base_output_percent - motor_speed;
 
     left_output = BoundDrivePercent(left_output);
     right_output = BoundDrivePercent(right_output);
 
     Drive_SetOutputPercent(left_output, right_output);
 
-    position_last_time = current_time;
+    last_time = current_time;
 }
 
 void ClearPIDState()
 {
-    position_setpoint = 0.0;
-    position_actual = 0.0;
-    position_previous_error = 0.0;
-    position_last_time = 0.0;
-    position_i_acc = 0.0;
+    setpoint = 0.0;
+    actual = 0.0;
+    previous_error = 0.0;
+    last_time = 0.0;
+    i_accumulator = 0.0;
+}
+
+void HandleSetpointChange(DriveSetpointMessage_t* msg)
+{
+    if(msg->drive_mode != drive_mode)
+    {
+        ClearPIDState();
+        drive_mode = msg->drive_mode;
+    }
+
+    setpoint = msg->setpoint;
+}
+
+void SetDriveState(uint32_t new_state)
+{
+    ClearPIDState();
+    state = new_state;
 }
 
 extern void DriveEventHandler(Message_t* msg)
 {
     if(msg->id == DRIVE_ENABLE_MSG_ID)
     {
-        ClearPIDState();
-        state = DRIVE_STATE_ENABLED;
+        SetDriveState(DRIVE_STATE_ENABLED);
     }
     else if(msg->id == DRIVE_DISABLE_MSG_ID)
     {
-        ClearPIDState();
-        state = DRIVE_STATE_DISABLED;
+        SetDriveState(DRIVE_STATE_DISABLED);
     }
     else if(msg->id == DRIVE_CTL_IN_MSG_ID)
     {
-        HandleDriveLineSetpoint((DriveControlMessage_t*)msg);
+        actual = ((DriveControlMessage_t*)msg)->actual;
     }
     else if(msg->id == DRIVE_TIMED_ACTIVITY_MSG_ID)
     {
         HandleTimedActivity(msg);
     }
+    else if(msg->id == DRIVE_BASE_VELOCITY_MSG_ID)
+    {
+        base_output_percent = ((DriveBaseVelocityMessage_t*)msg)->base_velocity;
+    }
+    else if(msg->id == DRIVE_SETPOINT_MSG_ID)
+    {
+        HandleSetpointChange((DriveSetpointMessage_t*)msg);
+    }
 }
 
-extern void Drive_Init()
+void ConfigureGPIO()
 {
     GPIO_InitTypeDef pwm_gpio_cfg = {0};
     GPIO_InitTypeDef dir_gpio_cfg = {0};
@@ -164,7 +220,10 @@ extern void Drive_Init()
     dir_gpio_cfg.Speed = GPIO_SPEED_LOW;
 
     HAL_GPIO_Init(RIGHT_DIR_PORT, &dir_gpio_cfg);
+}
 
+void ConfigureTimer()
+{
     motor_pwm.Instance = MOTOR_PWM_TIMER;
     motor_pwm.Init.Prescaler = PRESCALER;
     motor_pwm.Channel = LEFT_PWM_CHANNEL | RIGHT_PWM_CHANNEL;
@@ -186,14 +245,49 @@ extern void Drive_Init()
     HAL_TIM_PWM_ConfigChannel(&motor_pwm, &tim3_oc, RIGHT_PWM_CHANNEL);
 }
 
-extern void Drive_SetOutputPercent(float left_percent_output, float right_percent_output)
+extern void Drive_Init()
 {
+    ConfigureGPIO();
+    ConfigureTimer();
+    Drive_SetOutputPercent(0.0, 0.0);
+}
+
+void Drive_SetOutputPercent(float left_percent_output, float right_percent_output)
+{
+    // don't set if drive isn't enabled
     if(state == DRIVE_STATE_DISABLED)
     {
         return;
     }
 
-    // use output percent to set direction, not sure which pins to use
+    // fix for incorrect hardware configuration
+    left_percent_output *= LEFT_MOTOR_ORIENTATION;
+    right_percent_output *= RIGHT_MOTOR_ORIENTATION;
+
+    // apply deadband
+    left_percent_output = ApplyDriveDeadband(left_percent_output);
+    right_percent_output = ApplyDriveDeadband(right_percent_output);
+
+    // set motor directions
+    if(left_percent_output < 0.0)
+    {
+        left_percent_output *= -1;
+        HAL_GPIO_WritePin(LEFT_DIR_PORT, LEFT_DIR_PIN, 1);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(LEFT_DIR_PORT, LEFT_DIR_PIN, GPIO_PIN_RESET);
+    }
+
+    if(right_percent_output < 0.0)
+    {
+        right_percent_output *= -1;
+        HAL_GPIO_WritePin(RIGHT_DIR_PORT, RIGHT_DIR_PIN, 1);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(RIGHT_DIR_PORT, RIGHT_DIR_PIN, GPIO_PIN_RESET);
+    }
 
     __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_1, DUTY_PULSE(left_percent_output));
     __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_2, DUTY_PULSE(right_percent_output));
@@ -201,5 +295,5 @@ extern void Drive_SetOutputPercent(float left_percent_output, float right_percen
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, 1);
     HAL_TIM_PWM_Start(&motor_pwm, LEFT_PWM_CHANNEL);
     HAL_TIM_PWM_Start(&motor_pwm, RIGHT_PWM_CHANNEL);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 }
