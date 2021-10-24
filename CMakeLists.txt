@@ -60,14 +60,6 @@ add_definitions(-DSTM32L4R5xx)
 
 stm32_add_linker_script(${PROJECT_NAME} PRIVATE L4R5ZI.ld)
 
-# Do not use HAL template, not sure if this has been fixed
-# set(CMSIS_TEMPLATE "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/system_stm32l4xx.c")
-# set(CMSIS_TEMPLATE_PATH "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/")
-# file(REMOVE ${CMSIS_TEMPLATE})
-# file(COPY "${CMAKE_SOURCE_DIR}/src/system_stm32l4xx.c"
-#     DESTINATION ${CMSIS_TEMPLATE_PATH}
-# )
-
 stm32_generate_binary_file(${PROJECT_NAME})
 stm32_generate_hex_file(${PROJECT_NAME})
 stm32_print_size_of_target(${PROJECT_NAME})
