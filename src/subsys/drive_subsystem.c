@@ -15,25 +15,72 @@
 #define DRIVE_STATE_DISABLED 0
 #define DRIVE_STATE_ENABLED 1
 
-static uint32_t state = DRIVE_STATE_STOPPED;
+#define LEFT_MOTOR_ORIENTATION 1
+#define RIGHT_MOTOR_ORIENTATION 1
+
+#define MAX_DRIVE_PERCENT 100.0
+#define MIN_DRIVE_PERCENT -100.0
+
+#define BASE_VEL 0.0
+#define POSITION_kP 0.0
+#define POSITION_kI 0.0
+#define POSITION_kD 0.0
+
+static float position_setpoint = 0.0;
+static float position_actual = 0.0;
+static float position_previous_error = 0.0;
+static float position_last_time = 0.0;
+static float position_i_acc = 0.0;
+
+static uint32_t state = DRIVE_STATE_DISABLED;
 
 static TIM_HandleTypeDef htim3;
 
 void HandleDriveLineSetpoint(DriveControlMessage_t *msg);
 void HandleTimedActivity(Message_t *msg);
+float BoundDrivePercent(float percent_output);
+
+float BoundDrivePercent(float output)
+{
+    if (output > MAX_DRIVE_PERCENT)
+    {
+        return MAX_DRIVE_PERCENT;
+    }
+    else if (output < MIN_DRIVE_PERCENT)
+    {
+        return MIN_DRIVE_PERCENT;
+    }
+    else
+    {
+        return output;
+    }
+}
 
 void HandleDriveLineSetpoint(DriveControlMessage_t *msg)
 {
-    if (state == DRIVE_DISABLE_MSG_ID)
-    {
-        return;
-    }
-
-    // handle input, recalculate position control
+    position_actual = msg->actual;
 }
 
 void HandleTimedActivity(Message_t *msg)
 {
+    float current_time = (float)OSGetTime();
+
+    float position_error = position_setpoint - position_actual;
+    float p = position_error;
+    position_i_acc += position_error * (current_time - position_last_time);
+    float d = (position_error - position_previous_error) / (current_time - position_last_time);
+
+    float motor_speed = POSITION_kP * p + POSITION_kI * position_i_acc + POSITION_kI * d;
+
+    float left_output = BASE_VEL + motor_speed;
+    float right_output = BASE_VEL - motor_speed;
+
+    left_output = BoundDrivePercent(left_output);
+    right_output = BoundDrivePercent(right_output);
+
+    Drive_SetOutputPercent(left_output, right_output);
+
+    position_last_time = current_time;
 }
 
 extern void DriveEventHandler(Message_t *msg)
@@ -89,10 +136,17 @@ extern void Drive_Init()
     HAL_TIM_PWM_ConfigChannel(&htim3, &tim3_oc, TIM_CHANNEL_2);
 }
 
-extern void Drive_Reset()
+extern void Drive_SetOutputPercent(float left_percent_output, float right_percent_output)
 {
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, DUTY_PULSE(0.0));
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, DUTY_PULSE(0.0));
+    if (state == DRIVE_STATE_DISABLED)
+    {
+        return;
+    }
+
+    // use output percent to set direction, not sure which pins to use
+
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, DUTY_PULSE(left_percent_output));
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, DUTY_PULSE(right_percent_output));
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, 1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);

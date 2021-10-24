@@ -43,8 +43,10 @@ To be implemented, a placeholder for the future (a rough outline)
 
 ## Drive Control
 
-Reflectance sensor must read array and send data measurement to drive subsystem as the actual position for the control loop.
+### Line Following
 
+Periodic event to read from reflectance sensors and update actual position in drive subsystem.
+Periodic task to recalculate control loop.
 
 ## Peripheral Mapping
 
