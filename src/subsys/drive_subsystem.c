@@ -7,6 +7,9 @@
 
 #include <os.h>
 
+#define LEFT_CHANNEL TIM_CHANNEL_1
+#define RIGHT_CHANNEL TIM_CHANNEL_2
+
 #define PRESCALER 99 // 16e6MHz / (999 + 1) = 160KHz
 #define PERIOD 100
 #define PWM_FREQ (SystemCoreClock / ((PRESCALER) + 1))
@@ -34,11 +37,12 @@ static float position_i_acc = 0.0;
 
 static uint32_t state = DRIVE_STATE_DISABLED;
 
-static TIM_HandleTypeDef htim3;
+static TIM_HandleTypeDef motor_pwm;
 
 void HandleDriveLineSetpoint(DriveControlMessage_t *msg);
 void HandleTimedActivity(Message_t *msg);
 float BoundDrivePercent(float percent_output);
+void ClearPIDState();
 
 float BoundDrivePercent(float output)
 {
@@ -83,14 +87,25 @@ void HandleTimedActivity(Message_t *msg)
     position_last_time = current_time;
 }
 
+void ClearPIDState()
+{
+    position_setpoint = 0.0;
+    position_actual = 0.0;
+    position_previous_error = 0.0;
+    position_last_time = 0.0;
+    position_i_acc = 0.0;
+}
+
 extern void DriveEventHandler(Message_t *msg)
 {
     if (msg->id == DRIVE_ENABLE_MSG_ID)
     {
+        ClearPIDState();
         state = DRIVE_STATE_ENABLED;
     }
     else if (msg->id == DRIVE_DISABLE_MSG_ID)
     {
+        ClearPIDState();
         state = DRIVE_STATE_DISABLED;
     }
     else if (msg->id == DRIVE_CTL_IN_MSG_ID)
@@ -115,15 +130,15 @@ extern void Drive_Init()
 
     HAL_GPIO_Init(GPIOB, &gpio_cfg);
 
-    htim3.Instance = TIM3;
-    htim3.Init.Prescaler = PRESCALER;
-    htim3.Channel = TIM_CHANNEL_1;
-    htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim3.Init.Period = PERIOD;
-    htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+    motor_pwm.Instance = TIM3;
+    motor_pwm.Init.Prescaler = PRESCALER;
+    motor_pwm.Channel = LEFT_CHANNEL | RIGHT_CHANNEL;
+    motor_pwm.Init.CounterMode = TIM_COUNTERMODE_UP;
+    motor_pwm.Init.Period = PERIOD;
+    motor_pwm.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    motor_pwm.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 
-    HAL_TIM_PWM_Init(&htim3);
+    HAL_TIM_PWM_Init(&motor_pwm);
 
     TIM_OC_InitTypeDef tim3_oc = {0};
 
@@ -132,8 +147,8 @@ extern void Drive_Init()
     tim3_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
     tim3_oc.OCFastMode = TIM_OCFAST_DISABLE;
 
-    HAL_TIM_PWM_ConfigChannel(&htim3, &tim3_oc, TIM_CHANNEL_1);
-    HAL_TIM_PWM_ConfigChannel(&htim3, &tim3_oc, TIM_CHANNEL_2);
+    HAL_TIM_PWM_ConfigChannel(&motor_pwm, &tim3_oc, LEFT_CHANNEL);
+    HAL_TIM_PWM_ConfigChannel(&motor_pwm, &tim3_oc, RIGHT_CHANNEL);
 }
 
 extern void Drive_SetOutputPercent(float left_percent_output, float right_percent_output)
@@ -145,11 +160,11 @@ extern void Drive_SetOutputPercent(float left_percent_output, float right_percen
 
     // use output percent to set direction, not sure which pins to use
 
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, DUTY_PULSE(left_percent_output));
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, DUTY_PULSE(right_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_1, DUTY_PULSE(left_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_2, DUTY_PULSE(right_percent_output));
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, 1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&motor_pwm, LEFT_CHANNEL);
+    HAL_TIM_PWM_Start(&motor_pwm, RIGHT_CHANNEL);
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, RESET);
 }
