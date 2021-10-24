@@ -13,7 +13,7 @@ extern OS_t os;
 typedef struct DriveControlMessage_s
 {
     Message_t base;
-    uint32_t actual;
+    float actual;
 } DriveControlMessage_t;
 
 //*****************************************************************/
@@ -27,6 +27,7 @@ typedef struct DriveControlMessage_s
 #define DRIVE_DISABLE_MSG_ID 0x11
 #define DRIVE_ENABLE_MSG_ID 0x12
 #define DRIVE_TIMED_ACTIVITY_MSG_ID 0x13
+#define DRIVE_BASE_VELOCITY_MSG_ID 0x14
 
 #define PUSH_BUTTON_PRESSED_MSG_ID 0x21
 

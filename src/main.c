@@ -67,7 +67,7 @@ int main()
     ITCTL_Init();
 
     // start subsystems
-    Drive_Reset();
+    Drive_SetOutputPercent(0.0, 0.0);
 
     // initialize all active objects
     AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
