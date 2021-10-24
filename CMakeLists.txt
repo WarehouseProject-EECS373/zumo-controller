@@ -14,30 +14,35 @@ find_package(HAL COMPONENTS STM32L4 REQUIRED)
 
 set(CMAKE_ASM_FLAGS -c)
 
-set(PROJECT_SOURCES
+set(OS_SOURCES
     os/src/os_mem.c
     os/src/os_msg.c
     os/src/os_util.c
     os/src/os.c
+)
 
-    src/startup_stm32l4r5xx.s
-    src/system_stm32l4xx.c
-
+set(PROJECT_SOURCES
     src/app_defs.h
-
+    
     src/main.c
-    src/pwm_ao.c
     src/gpio_ao.c
     src/os_port_arm_m4.c
     src/rmk_hal_clock_cfg.c
+    
+    src/subsys/drive_subsystem.c
+    src/subsys/input_ctl_subsystem.c
 )
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES}
+set(STM_SOURCES
+    src/stm/startup_stm32l4r5xx.s
+    src/stm/system_stm32l4xx.c
     src/stm32l4xx_hal_conf.h
-    src/stm32l4r5xx.h
-    src/system_stm32l4xx.h
+    src/stm/stm32l4r5xx.h
+    src/stm/system_stm32l4xx.h
 )
-
+    
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${OS_SOURCES} ${STM_SOURCES})
+    
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/os/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -56,12 +61,12 @@ add_definitions(-DSTM32L4R5xx)
 stm32_add_linker_script(${PROJECT_NAME} PRIVATE L4R5ZI.ld)
 
 # Do not use HAL template, not sure if this has been fixed
-set(CMSIS_TEMPLATE "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/system_stm32l4xx.c")
-set(CMSIS_TEMPLATE_PATH "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/")
-file(REMOVE ${CMSIS_TEMPLATE})
-file(COPY "${CMAKE_SOURCE_DIR}/src/system_stm32l4xx.c"
-    DESTINATION ${CMSIS_TEMPLATE_PATH}
-)
+# set(CMSIS_TEMPLATE "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/system_stm32l4xx.c")
+# set(CMSIS_TEMPLATE_PATH "${CMAKE_SOURCE_DIR}/debug/_deps/stm32-cmsis-l4-src/Source/Templates/")
+# file(REMOVE ${CMSIS_TEMPLATE})
+# file(COPY "${CMAKE_SOURCE_DIR}/src/system_stm32l4xx.c"
+#     DESTINATION ${CMSIS_TEMPLATE_PATH}
+# )
 
 stm32_generate_binary_file(${PROJECT_NAME})
 stm32_generate_hex_file(${PROJECT_NAME})

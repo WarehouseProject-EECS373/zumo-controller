@@ -41,6 +41,11 @@ To be implemented, a placeholder for the future (a rough outline)
 - Use `ACTIVE_OBJECT_DECL` macro in `main.c` to declare
 - Use `AO_INIT` macro in `main()` to initialize
 
+## Drive Control
+
+Reflectance sensor must read array and send data measurement to drive subsystem as the actual position for the control loop.
+
+
 ## Peripheral Mapping
 
 [Nucleo-L4R5ZI Pinout](https://os.mbed.com/platforms/NUCLEO-L4R5ZI/)
