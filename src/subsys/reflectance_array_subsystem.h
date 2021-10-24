@@ -3,4 +3,8 @@
 
 #include <os.h>
 
+extern void REFARR_Init();
+
+extern void ReflectanceArrayEventHandler(Message_t* msg);
+
 #endif

@@ -42,9 +42,15 @@ typedef struct DriveBaseVelocityMessage_s
 #define DRIVE_ENABLE_MSG_ID         0x12
 #define DRIVE_TIMED_ACTIVITY_MSG_ID 0x13
 #define DRIVE_BASE_VELOCITY_MSG_ID  0x14
-#define DRIVE_SETPOINT_MSG_ID       0x14
+#define DRIVE_SETPOINT_MSG_ID       0x15
 
-#define PUSH_BUTTON_PRESSED_MSG_ID 0x21
+#define REFARR_CALIBRATE_MSG_ID  0x30
+#define REFARR_ON_MSG_ID         0x31
+#define REFARR_OFF_MSG_ID        0x32
+#define REFARR_START_READ_MSG_ID 0x33
+#define REFARR_STOP_READ_MSG_ID  0x34
+
+#define PUSH_BUTTON_PRESSED_MSG_ID 0x61
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
@@ -52,8 +58,10 @@ typedef struct DriveBaseVelocityMessage_s
 
 #define HEARTBEAT_QUEUE_SIZE 1
 #define DRIVE_SS_QUEUE_SIZE  16
+#define REFARR_SS_QUEUE_SIZE 8
 
 ACTIVE_OBJECT_EXTERN(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
+ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 #endif
