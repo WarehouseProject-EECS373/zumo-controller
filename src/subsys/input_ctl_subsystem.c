@@ -2,8 +2,8 @@
 
 #include <stm32l4xx_hal.h>
 
-#include "stm/stm32l4xx.h"
 #include "app_defs.h"
+#include "stm/stm32l4xx.h"
 
 #include <os.h>
 
@@ -17,10 +17,10 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
     OS_ISR_ENTER(&os);
 
     // if triggered by GPIO_13
-    if (__HAL_GPIO_EXTI_GET_FLAG(GPIO_PIN_13))
+    if(__HAL_GPIO_EXTI_GET_FLAG(GPIO_PIN_13))
     {
         // check debounce
-        if (!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
+        if(!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
         {
         }
 

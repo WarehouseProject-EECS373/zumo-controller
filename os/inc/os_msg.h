@@ -25,7 +25,7 @@ struct MessageGeneric_s
  */
 struct Message_s
 {
-    uint32_t id;      //!< message id
+    uint32_t id; //!< message id
     uint8_t msg_size; //<! length of message
 };
 
@@ -33,7 +33,7 @@ struct DataMessage_s
 {
     Message_t base;
     uint32_t timestamp; //!< message timestamp
-    uint32_t data;      //!< message data
+    uint32_t data; //!< message data
 };
 
 struct MemoryBlockMessage_s
@@ -49,10 +49,10 @@ struct MemoryBlockMessage_s
  */
 struct MessageQueue_s
 {
-    MessageGeneric_t *queue; //!< buffer
-    volatile uint16_t head;  //!< index
-    volatile uint16_t tail;  //!< index
-    uint16_t size;           //!< buffer size
+    MessageGeneric_t* queue; //!< buffer
+    volatile uint16_t head; //!< index
+    volatile uint16_t tail; //!< index
+    uint16_t size; //!< buffer size
     bool is_full;
 };
 
@@ -63,7 +63,7 @@ struct MessageQueue_s
  * @return true if queue is empty
  * @return false if queue has space
  */
-extern bool MsgQueueIsEmpty(MessageQueue_t *q);
+extern bool MsgQueueIsEmpty(MessageQueue_t* q);
 
 /**
  * @brief Creates message queue
@@ -72,7 +72,7 @@ extern bool MsgQueueIsEmpty(MessageQueue_t *q);
  * @param size
  * @param queue
  */
-extern void MsgQueueCreate(MessageQueue_t *q, const uint16_t size, MessageGeneric_t *queue);
+extern void MsgQueueCreate(MessageQueue_t* q, const uint16_t size, MessageGeneric_t* queue);
 
 /**
  * @brief Adds message to queue
@@ -81,7 +81,7 @@ extern void MsgQueueCreate(MessageQueue_t *q, const uint16_t size, MessageGeneri
  * @param msg
  * @return MessageQueueStatus_t
  */
-extern MessageQueueStatus_t MsgQueuePut(ActiveObject_t *dest, void *msg);
+extern MessageQueueStatus_t MsgQueuePut(ActiveObject_t* dest, void* msg);
 
 /**
  * @brief Gets the next message from the queue, ONLY BLOCKING FUNCTION IN OS
@@ -89,6 +89,6 @@ extern MessageQueueStatus_t MsgQueuePut(ActiveObject_t *dest, void *msg);
  * @param ao
  * @return Message_t*
  */
-extern void *MsgQueueGet(ActiveObject_t *ao);
+extern void* MsgQueueGet(ActiveObject_t* ao);
 
 #endif
