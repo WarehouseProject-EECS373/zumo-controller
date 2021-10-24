@@ -31,6 +31,7 @@ set(PROJECT_SOURCES
     
     src/subsys/drive_subsystem.c
     src/subsys/input_ctl_subsystem.c
+    src/subsys/reflectance_array_subsystem.c
 )
 
 set(STM_SOURCES
