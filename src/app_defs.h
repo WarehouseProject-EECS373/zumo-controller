@@ -10,29 +10,32 @@ extern OS_t os;
 // Custom Messages
 //*****************************************************************/
 
-typedef struct WheelControlMessage_s
+typedef struct DriveControlMessage_s
 {
     Message_t base;
-    uint16_t velocity_1;
-    uint16_t setpoint_2;
-} ControlMessage_t;
+    uint32_t actual;
+} DriveControlMessage_t;
 
 //*****************************************************************/
 // MESSAGE IDs
 //*****************************************************************/
 
-#define PUSH_BUTTON_PRESSED_MSG_ID 0x1
-#define DATA_MSG_ID 0x3
-#define HEARTBEAT_MSG_ID 0x5
+#define DATA_MSG_ID 0x0
+#define HEARTBEAT_MSG_ID 0x1
+
+#define DRIVE_CTL_IN_MSG_ID 0x10
+#define DRIVE_DISABLE_MSG_ID 0x11
+#define DRIVE_ENABLE_MSG_ID 0x12
+#define DRIVE_TIMED_ACTIVITY_MSG_ID 0x13
+
+#define PUSH_BUTTON_PRESSED_MSG_ID 0x21
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
 //*****************************************************************/
 
 #define HEARTBEAT_QUEUE_SIZE 2
-#define PWM_QUEUE_SIZE 32
 
 ACTIVE_OBJECT_EXTERN(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
-ACTIVE_OBJECT_EXTERN(pwm_ao, PWM_QUEUE_SIZE)
 
 #endif

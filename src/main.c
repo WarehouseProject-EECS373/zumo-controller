@@ -1,6 +1,6 @@
 
 #include <stdint.h>
-#include <stm32l4xx.h>
+#include <stm/stm32l4xx.h>
 #include <stm32l4xx_hal.h>
 
 #include <os.h>
@@ -9,7 +9,8 @@
 #include "rmk_hal_clock_cfg.h"
 
 #include "gpio_ao.h"
-#include "pwm_ao.h"
+#include "subsys/drive_subsystem.h"
+#include "subsys/input_ctl_subsystem.h"
 
 #define HEARTBEAT_PERIOD 500
 
@@ -18,7 +19,6 @@
 //*****************************************************************/
 
 ACTIVE_OBJECT_DECL(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
-ACTIVE_OBJECT_DECL(pwm_ao, PWM_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -59,16 +59,18 @@ int main()
     // - peripheral clocks
     Clock_Init();
 
-    // initialize peripherals
+    // peripherals init
     GPIO_Init();
-    PWM_Init();
 
-    // start peripherals
-    PWM_Start();
+    // initialize subsystems
+    Drive_Init();
+    ITCTL_Init();
+
+    // start subsystems
+    Drive_Reset();
 
     // initialize all active objects
     AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
-    AO_INIT(pwm_ao, 2, DualPwmEventHandler, PWM_QUEUE_SIZE)
 
     // create and schedule timed events.
     TimedEventSimpleCreate(&hb_event, &heartbeat_ao, &hb_msg, HEARTBEAT_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
