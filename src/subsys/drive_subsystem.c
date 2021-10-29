@@ -8,12 +8,10 @@
 
 // pin configurations for drive
 
-// TODO: check pin and peripheral assignments
-#define MOTOR_PWM_TIMER   TIM4
+#define MOTOR_PWM_TIMER   TIM3
 #define RIGHT_PWM_CHANNEL TIM_CHANNEL_2
 #define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
 
-// TODO: check pin assignments
 #define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_4
 #define PWM_RIGHT_OUTPUT_PORT GPIOB
 #define PWM_RIGHT_AF          GPIO_AF2_TIM3
@@ -22,7 +20,6 @@
 #define PWM_LEFT_OUTPUT_PORT GPIOB
 #define PWM_LEFT_AF          GPIO_AF2_TIM3
 
-// TODO: check pin assignments
 #define RIGHT_DIR_PORT GPIOA
 #define RIGHT_DIR_PIN  GPIO_PIN_4
 
@@ -65,7 +62,7 @@ static float previous_error = 0.0;
 static float last_time = 0.0;
 static float i_accumulator = 0.0;
 
-static uint32_t state = DRIVE_STATE_DISABLED;
+static uint32_t state = DRIVE_STATE_ENABLED;
 static uint32_t drive_mode = DRIVE_MODE_DRIVE;
 
 static TIM_HandleTypeDef motor_pwm;
@@ -74,7 +71,7 @@ void HandleDriveLineSetpoint(DriveControlMessage_t* msg);
 void HandleTimedActivity(Message_t* msg);
 void HandleSetpointChange(DriveSetpointMessage_t* msg);
 
-void Drive_SetOutputPercent(float left_percent_output, float right_percent_output);
+void SetOutoutPercent(float left_percent_output, float right_percent_output);
 
 float ApplyDriveDeadband(float value);
 float BoundDrivePercent(float percent_output);
@@ -129,7 +126,7 @@ void HandleTimedActivity(Message_t* msg)
     left_output = BoundDrivePercent(left_output);
     right_output = BoundDrivePercent(right_output);
 
-    Drive_SetOutputPercent(left_output, right_output);
+    SetOutoutPercent(left_output, right_output);
 
     last_time = current_time;
 }
@@ -251,10 +248,11 @@ extern void Drive_Init()
 {
     ConfigureGPIO();
     ConfigureTimer();
-    Drive_SetOutputPercent(0.0, 0.0);
+
+    SetOutoutPercent(0.5, 0.5);
 }
 
-void Drive_SetOutputPercent(float left_percent_output, float right_percent_output)
+void SetOutoutPercent(float left_percent_output, float right_percent_output)
 {
     // don't set if drive isn't enabled
     if(state == DRIVE_STATE_DISABLED)
@@ -291,11 +289,9 @@ void Drive_SetOutputPercent(float left_percent_output, float right_percent_outpu
         HAL_GPIO_WritePin(RIGHT_DIR_PORT, RIGHT_DIR_PIN, GPIO_PIN_RESET);
     }
 
-    __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_1, DUTY_PULSE(left_percent_output));
-    __HAL_TIM_SET_COMPARE(&motor_pwm, TIM_CHANNEL_2, DUTY_PULSE(right_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm, LEFT_PWM_CHANNEL, DUTY_PULSE(left_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm, RIGHT_PWM_CHANNEL, DUTY_PULSE(right_percent_output));
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, 1);
     HAL_TIM_PWM_Start(&motor_pwm, LEFT_PWM_CHANNEL);
     HAL_TIM_PWM_Start(&motor_pwm, RIGHT_PWM_CHANNEL);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 }
