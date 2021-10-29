@@ -8,27 +8,27 @@
 
 // pin configurations for drive
 
-#define MOTOR_PWM_TIMER   TIM3
-#define RIGHT_PWM_CHANNEL TIM_CHANNEL_2
-#define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
+#define MOTOR_PWM_TIMER   TIM1
+#define RIGHT_PWM_CHANNEL TIM_CHANNEL_1
+#define LEFT_PWM_CHANNEL  TIM_CHANNEL_2
 
-#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_4
-#define PWM_RIGHT_OUTPUT_PORT GPIOB
-#define PWM_RIGHT_AF          GPIO_AF2_TIM3
+#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_9
+#define PWM_RIGHT_OUTPUT_PORT GPIOE
+#define PWM_RIGHT_AF          GPIO_AF1_TIM1
 
-#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_5
-#define PWM_LEFT_OUTPUT_PORT GPIOB
-#define PWM_LEFT_AF          GPIO_AF2_TIM3
+#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_11
+#define PWM_LEFT_OUTPUT_PORT GPIOE
+#define PWM_LEFT_AF          GPIO_AF1_TIM1
 
-#define RIGHT_DIR_PORT GPIOA
-#define RIGHT_DIR_PIN  GPIO_PIN_4
+#define RIGHT_DIR_PORT GPIOF
+#define RIGHT_DIR_PIN  GPIO_PIN_12
 
-#define LEFT_DIR_PORT GPIOA
-#define LEFT_DIR_PIN  GPIO_PIN_3
+#define LEFT_DIR_PORT GPIOF
+#define LEFT_DIR_PIN  GPIO_PIN_13
 
 // timer configuration
-#define PRESCALER     99 // 16e6MHz / (999 + 1) = 160KHz
-#define PERIOD        100
+#define PRESCALER     1 // 16e6MHz / (1 + 1) = 8MHz
+#define PERIOD        400 // 160 MHz / 400 = 20KHz
 #define PWM_FREQ      (SystemCoreClock / ((PRESCALER) + 1))
 #define DUTY_PULSE(x) ((uint32_t)((x) * (PERIOD)))
 
@@ -45,8 +45,8 @@
 #define RIGHT_MOTOR_ORIENTATION 1
 
 #define DEADBAND          0.0
-#define MAX_DRIVE_PERCENT 100.0
-#define MIN_DRIVE_PERCENT -100.0
+#define MAX_DRIVE_PERCENT 1.0
+#define MIN_DRIVE_PERCENT -1.0
 
 // position control PID constants
 #define kP 0.0
@@ -248,8 +248,7 @@ extern void Drive_Init()
 {
     ConfigureGPIO();
     ConfigureTimer();
-
-    SetOutoutPercent(0.5, 0.5);
+    SetOutoutPercent(-0.8, 0.8);
 }
 
 void SetOutoutPercent(float left_percent_output, float right_percent_output)
@@ -261,8 +260,8 @@ void SetOutoutPercent(float left_percent_output, float right_percent_output)
     }
 
     // fix for incorrect hardware configuration
-    left_percent_output *= LEFT_MOTOR_ORIENTATION;
-    right_percent_output *= RIGHT_MOTOR_ORIENTATION;
+    left_percent_output *= (float)LEFT_MOTOR_ORIENTATION;
+    right_percent_output *= (float)RIGHT_MOTOR_ORIENTATION;
 
     // apply deadband
     left_percent_output = ApplyDriveDeadband(left_percent_output);

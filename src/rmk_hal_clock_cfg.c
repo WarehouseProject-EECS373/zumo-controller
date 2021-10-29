@@ -96,11 +96,12 @@ extern void Clock_Init()
 
     __HAL_RCC_DAC1_CLK_ENABLE();
 
-    __HAL_RCC_TIM3_CLK_ENABLE();
+    __HAL_RCC_TIM1_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
     __HAL_RCC_GPIOG_CLK_ENABLE();
 
     // set systick frequency (1ms)
