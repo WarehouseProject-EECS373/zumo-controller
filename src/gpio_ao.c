@@ -18,10 +18,10 @@ extern void GPIO_Init()
 
     HAL_GPIO_Init(GPIOB, &gpio_cfg);
 
-    gpio_cfg.Pin = GPIO_PIN_3;
-    gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
-    gpio_cfg.Pull = GPIO_NOPULL;
-    gpio_cfg.Speed = GPIO_SPEED_FREQ_HIGH;
+    // gpio_cfg.Pin = GPIO_PIN_3;
+    // gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
+    // gpio_cfg.Pull = GPIO_NOPULL;
+    // gpio_cfg.Speed = GPIO_SPEED_FREQ_HIGH;
 
-    HAL_GPIO_Init(GPIOA, &gpio_cfg);
+    // HAL_GPIO_Init(GPIOA, &gpio_cfg);
 }

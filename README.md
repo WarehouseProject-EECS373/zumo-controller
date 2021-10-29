@@ -54,13 +54,19 @@ Periodic task to recalculate control loop.
 
 Which peripherals are in use on which pins
 
-### Timers
+### Kernel
 
 - TIM2
   - dedicated to `rmkernel` and `HAL`
-- TIM3
-  - Motor PWM
-  - 2 output channels, PB4 and PB6
+
+### Motor Control
+
+- TIM3 PWM Output
+  - PB4 -> D9 (right)
+  - PB5 -> D10 (left)
+- GPIO Direction Control
+  - PA3 -> D7 (right)
+  - PA4 -> D8 (left)
 
 ## Directory Structure
 
