@@ -116,6 +116,8 @@ $ tree -L 2 # with modification
   
   Then, run this command: st-flash.exe write \\wsl$\Ubuntu\home\aashishhari\373\zumo-controller 0x08000000
   Note the path name is based on your wsl path, use explorer.exe . and copy paste from the top search bar.
+  
+  Save these two commands using a text editor into a .bat file.  Will need to run this every time we want to flash.
  
   ```
 
