@@ -7,4 +7,6 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void);
 
 extern void ITCTL_Init();
 
+extern void InputHandler(Message_t*);
+
 #endif

@@ -8,17 +8,17 @@
 
 // pin configurations for drive
 
-#define MOTOR_PWM_TIMER   TIM1
-#define RIGHT_PWM_CHANNEL TIM_CHANNEL_1
-#define LEFT_PWM_CHANNEL  TIM_CHANNEL_2
+#define MOTOR_PWM_TIMER   TIM4
+#define RIGHT_PWM_CHANNEL TIM_CHANNEL_4
+#define LEFT_PWM_CHANNEL  TIM_CHANNEL_3
 
-#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_9
-#define PWM_RIGHT_OUTPUT_PORT GPIOE
-#define PWM_RIGHT_AF          GPIO_AF1_TIM1
+#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_15
+#define PWM_RIGHT_OUTPUT_PORT GPIOD
+#define PWM_RIGHT_AF          GPIO_AF2_TIM4
 
-#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_11
-#define PWM_LEFT_OUTPUT_PORT GPIOE
-#define PWM_LEFT_AF          GPIO_AF1_TIM1
+#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_14
+#define PWM_LEFT_OUTPUT_PORT GPIOD
+#define PWM_LEFT_AF          GPIO_AF2_TIM4
 
 #define RIGHT_DIR_PORT GPIOF
 #define RIGHT_DIR_PIN  GPIO_PIN_12
@@ -72,6 +72,10 @@ void HandleTimedActivity(Message_t* msg);
 void HandleSetpointChange(DriveSetpointMessage_t* msg);
 
 void SetOutoutPercent(float left_percent_output, float right_percent_output);
+void SetDriveState(uint32_t new_state);
+void ToggleDriveState();
+
+void RampTestIteration();
 
 float ApplyDriveDeadband(float value);
 float BoundDrivePercent(float percent_output);
@@ -131,6 +135,37 @@ void HandleTimedActivity(Message_t* msg)
     last_time = current_time;
 }
 
+void RampTestIteration()
+{
+    static float left = MIN_DRIVE_PERCENT;
+    static float right = MIN_DRIVE_PERCENT;
+    static float iter_step = 0.1;
+    static bool done = false;
+
+    if(done)
+    {
+        SetOutoutPercent(0.0, 0.0);
+        return;
+    }
+
+    SetOutoutPercent(left, right);
+
+    left += iter_step;
+
+    if(left > MAX_DRIVE_PERCENT)
+    {
+        right += iter_step;
+        left = MIN_DRIVE_PERCENT;
+    }
+
+    if(right > MAX_DRIVE_PERCENT)
+    {
+        left = 0.0;
+        right = 0.0;
+        done = true;
+    }
+}
+
 void ClearPIDState()
 {
     setpoint = 0.0;
@@ -153,13 +188,36 @@ void HandleSetpointChange(DriveSetpointMessage_t* msg)
 
 void SetDriveState(uint32_t new_state)
 {
+    if(DRIVE_STATE_DISABLED == new_state)
+    {
+        SetOutoutPercent(0.0, 0.0);
+    }
+
     ClearPIDState();
     state = new_state;
 }
 
+void ToggleDriveState()
+{
+    if(state == DRIVE_STATE_DISABLED)
+    {
+        SetDriveState(DRIVE_STATE_ENABLED);
+    }
+    else
+    {
+        SetDriveState(DRIVE_STATE_DISABLED);
+    }
+}
+
 extern void DriveEventHandler(Message_t* msg)
 {
-    if(msg->id == DRIVE_ENABLE_MSG_ID)
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+
+    if(msg->id == DRIVE_TOGGLE_MSG_ID)
+    {
+        ToggleDriveState();
+    }
+    else if(msg->id == DRIVE_ENABLE_MSG_ID)
     {
         SetDriveState(DRIVE_STATE_ENABLED);
     }
@@ -183,12 +241,19 @@ extern void DriveEventHandler(Message_t* msg)
     {
         HandleSetpointChange((DriveSetpointMessage_t*)msg);
     }
+    else if(msg->id == DRIVE_RAMP_TEST_ITERATION_MSG_ID)
+    {
+        RampTestIteration();
+    }
+
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 }
 
 void ConfigureGPIO()
 {
     GPIO_InitTypeDef pwm_gpio_cfg = {0};
     GPIO_InitTypeDef dir_gpio_cfg = {0};
+    GPIO_InitTypeDef gpio_cfg = {0};
 
     pwm_gpio_cfg.Pin = PWM_LEFT_OUTPUT_PIN;
     pwm_gpio_cfg.Mode = GPIO_MODE_AF_PP;
@@ -219,6 +284,13 @@ void ConfigureGPIO()
     dir_gpio_cfg.Speed = GPIO_SPEED_LOW;
 
     HAL_GPIO_Init(RIGHT_DIR_PORT, &dir_gpio_cfg);
+
+    gpio_cfg.Pin = GPIO_PIN_8;
+    gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio_cfg.Pull = GPIO_NOPULL;
+    gpio_cfg.Speed = GPIO_SPEED_LOW;
+
+    HAL_GPIO_Init(GPIOC, &gpio_cfg);
 }
 
 void ConfigureTimer()
@@ -248,7 +320,8 @@ extern void Drive_Init()
 {
     ConfigureGPIO();
     ConfigureTimer();
-    SetOutoutPercent(-0.8, 0.8);
+
+    SetOutoutPercent(0.0, 0.0);
 }
 
 void SetOutoutPercent(float left_percent_output, float right_percent_output)
