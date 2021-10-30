@@ -108,6 +108,15 @@ $ tree -L 2 # with modification
   git checkout develop
   git submodule update --init --recursive
   sudo apt install gcc-arm-none-eabi
+  export STM32_TOOLCHAIN_PATH=/usr/bin/arm-none-eabi-gcc
+  
+  Download the latest release (V1.7.0 on the right) from here: https://github.com/stlink-org/stlink/releases/tag/v1.7.0 into Program Files (x86).
+  In Command Prompt, navigate to the bin files in this directory: cd <path> (C:\Program Files (x86)\stlink-1.7.0-x86_64-w64-mingw32\bin)
+  
+  
+  Then, run this command: st-flash.exe write \\wsl$\Ubuntu\home\aashishhari\373\zumo-controller 0x08000000
+  Note the path name is based on your wsl path, use explorer.exe . and copy paste from the top search bar.
+ 
   ```
 
 ## Installation
