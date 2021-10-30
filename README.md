@@ -102,6 +102,13 @@ $ tree -L 2 # with modification
   ```bash
   git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake
   ```
+  
+  Instead,
+  ```bash
+  git checkout develop
+  git submodule update --init --recursive
+  sudo apt install gcc-arm-none-eabi
+  ```
 
 ## Installation
 
