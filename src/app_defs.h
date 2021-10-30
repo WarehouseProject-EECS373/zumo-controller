@@ -52,6 +52,8 @@ typedef struct DriveBaseVelocityMessage_s
 #define REFARR_START_READ_MSG_ID 0x33
 #define REFARR_STOP_READ_MSG_ID  0x34
 
+#define TEST_OBJ__SIMPLE_MSG_ID 0x80
+
 #define PUSH_BUTTON_PRESSED_MSG_ID 0x61
 
 //*****************************************************************/
@@ -62,10 +64,14 @@ typedef struct DriveBaseVelocityMessage_s
 #define DRIVE_SS_QUEUE_SIZE     16
 #define REFARR_SS_QUEUE_SIZE    8
 #define INPUT_CTL_SS_QUEUE_SIZE 8
+#define TEST_OBJ_QUEUE_SIZE     8
 
 ACTIVE_OBJECT_EXTERN(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
+
+ACTIVE_OBJECT_EXTERN(test_obj, TEST_OBJ_QUEUE_SIZE)
+
 // ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 #endif
