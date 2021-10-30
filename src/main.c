@@ -30,6 +30,8 @@ ACTIVE_OBJECT_DECL(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 
+ACTIVE_OBJECT_DECL(test_obj, TEST_OBJ_QUEUE_SIZE)
+
 // ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 //*****************************************************************/
@@ -69,6 +71,11 @@ void HeartbeatHandler(Message_t* msg)
     }
 }
 
+void TestObjHandler(Message_t* msg)
+{
+    // test obj handler, does nothing for now
+}
+
 void OnKernelInit()
 {
     HAL_NVIC_SetPriority(SysTick_IRQn, OS_BASEPRI, 0);
@@ -105,6 +112,8 @@ int main()
     AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
     AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE)
     AO_INIT(input_ctl_ss_ao, 3, InputHandler, INPUT_CTL_SS_QUEUE_SIZE)
+
+    AO_INIT(test_obj, 5, TestObjHandler, TEST_OBJ_QUEUE_SIZE)
 
     // AO_INIT(refarr_ss_ao, 3, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE)
 
