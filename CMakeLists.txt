@@ -6,6 +6,8 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/modules/stm32-cmake/cmake/s
 project(zumo-controller C ASM)
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
+add_definitions(-DSTM32L4R5xx)
+
 stm32_fetch_cmsis(L4)
 stm32_fetch_hal(L4)
 
@@ -56,8 +58,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::L4::PWREx
     CMSIS::STM32::L4
     STM32::NoSys)
-
-add_definitions(-DSTM32L4R5xx)
 
 stm32_add_linker_script(${PROJECT_NAME} PRIVATE L4R5ZI.ld)
 
