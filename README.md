@@ -114,11 +114,12 @@ $ tree -L 2 # with modification
   In Command Prompt, navigate to the bin files in this directory: cd <path> (C:\Program Files (x86)\stlink-1.7.0-x86_64-w64-mingw32\bin)
   
   
-  Then, run this command: st-flash.exe write \\wsl$\Ubuntu\home\aashishhari\373\zumo-controller 0x08000000
+  Then, run this command: st-flash.exe write \\wsl$\Ubuntu\home\aashishhari\373\zumo-controller\debug\zumo-controller.bin 0x08000000
   Note the path name is based on your wsl path, use explorer.exe . and copy paste from the top search bar.
   
   Save these two commands using a text editor into a .bat file.  Will need to run this every time we want to flash.
  
+ make debug before running ^ every time you make changes to the src files.
   ```
 
 ## Installation
