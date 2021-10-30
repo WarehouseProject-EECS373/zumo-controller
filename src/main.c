@@ -20,6 +20,7 @@
 #define HEARTBEAT_PERIOD               500
 #define IR_SENSOR_READ_PERIOD          3
 #define DRIVE_SS_TIMED_ACTIVITY_PERIOD 5
+#define DRIVE_SS_RAMP_TEST_PERIOD      100
 
 //*****************************************************************/
 // Active Object Declarations and Configuration
@@ -27,6 +28,8 @@
 
 ACTIVE_OBJECT_DECL(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
+
 // ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 //*****************************************************************/
@@ -48,6 +51,10 @@ static Message_t hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)
 // static TimedEventSimple_t drive_ss_ctl_loop_event;
 // static Message_t drive_ss_ctl_loop_msg = {.id = DRIVE_TIMED_ACTIVITY_MSG_ID,
 //                                           .msg_size = sizeof(Message_t)};
+
+static TimedEventSimple_t drive_ramp_test_event;
+static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
+                                        .msg_size = sizeof(Message_t)};
 
 /**
  * @brief Simple LED heartbeat so we know everything is ok. Tie this into a watchdog eventually.
@@ -89,7 +96,7 @@ int main()
 
     // initialize subsystems
     Drive_Init();
-    // ITCTL_Init();
+    ITCTL_Init();
     // REFARR_Init();
 
     // start subsystems
@@ -97,6 +104,8 @@ int main()
     // initialize all active objects
     AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
     AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE)
+    AO_INIT(input_ctl_ss_ao, 3, InputHandler, INPUT_CTL_SS_QUEUE_SIZE)
+
     // AO_INIT(refarr_ss_ao, 3, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE)
 
     // create and schedule timed events.
@@ -111,6 +120,10 @@ int main()
     // TimedEventSimpleCreate(&drive_ss_ctl_loop_event, &drive_ss_ao, &drive_ss_ctl_loop_msg,
     //                        DRIVE_SS_TIMED_ACTIVITY_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
     // SchedulerAddTimedEvent(&drive_ss_ctl_loop_event);
+
+    TimedEventSimpleCreate(&drive_ramp_test_event, &drive_ss_ao, &drive_ramp_test_msg,
+                           DRIVE_SS_RAMP_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&drive_ramp_test_event);
 
     // initialze kernel
     OSCallbacksCfg_t os_callback_cfg = {

@@ -2,6 +2,9 @@
 
 #include <stm32l4xx_hal.h>
 
+#include <os.h>
+#include <os_msg.h>
+
 #include "app_defs.h"
 #include "stm/stm32l4xx.h"
 
@@ -20,6 +23,8 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
         // check debounce
         if(!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
         {
+            Message_t drive_toggle_msg = {.id = DRIVE_TOGGLE_MSG_ID, .msg_size = sizeof(Message_t)};
+            MsgQueuePut(&drive_ss_ao, &drive_toggle_msg);
         }
 
         // must clear interrupt
@@ -28,6 +33,10 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 
     // always exit to tail chain scheduler
     OS_ISR_EXIT(&os);
+}
+
+extern void InputHandler(Message_t* msg)
+{
 }
 
 extern void ITCTL_Init()

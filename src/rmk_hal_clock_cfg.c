@@ -53,7 +53,7 @@ extern HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     hhal_tim.Channel = TIM_CHANNEL_1;
     hhal_tim.Init.Prescaler = 999;
     hhal_tim.Init.CounterMode = TIM_COUNTERMODE_UP;
-    hhal_tim.Init.Period = 16;
+    hhal_tim.Init.Period = 15;
     hhal_tim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     hhal_tim.Init.RepetitionCounter = 0;
 
@@ -101,7 +101,9 @@ extern void Clock_Init()
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();
+    __HAL_RCC_GPIOF_CLK_ENABLE();
     __HAL_RCC_GPIOG_CLK_ENABLE();
 
     // set systick frequency (1ms)
