@@ -1,4 +1,4 @@
-#include "gpio_ao.h"
+#include "watchdog.h"
 
 #include <stm32l4xx.h>
 #include <stm32l4xx_hal.h>
@@ -7,7 +7,11 @@
 
 #include "app_defs.h"
 
-extern void GPIO_Init()
+extern void WatchdogEventHandler(Message_t* msg)
+{
+}
+
+extern void Watchdog_Init()
 {
     GPIO_InitTypeDef gpio_cfg;
 

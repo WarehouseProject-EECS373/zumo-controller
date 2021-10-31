@@ -19,31 +19,16 @@ __attribute__((__interrupt__)) extern void TIM2_IRQHandler()
     }
 }
 
-/**
- * @brief Increment system time
- *
- */
 extern void HAL_IncTick(void)
 {
     os.time++;
 }
 
-/**
- * @brief Implementation of __weak
- *
- * @return uint32_t current time in milliseconds
- */
 extern uint32_t HAL_GetTick(void)
 {
     return os.time;
 }
 
-/**
- * @brief Create 1ms timer to replace SysTick for use with HAL and general system time
- *
- * @param TickPriority
- * @return HAL_StatusTypeDef
- */
 extern HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
     os.time = 0;
@@ -83,6 +68,7 @@ extern void Clock_Init()
     {
     }
 
+    // 16MHz
     SystemCoreClock = HSI_VALUE;
 
     //

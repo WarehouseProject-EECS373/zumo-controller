@@ -27,7 +27,7 @@ set(PROJECT_SOURCES
     src/app_defs.h
     
     src/main.c
-    src/gpio_ao.c
+    src/watchdog.c
     src/os_port_arm_m4.c
     src/rmk_hal_clock_cfg.c
     

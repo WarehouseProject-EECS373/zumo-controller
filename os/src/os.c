@@ -176,7 +176,7 @@ void SchedulerActivateAO()
         // set the current execution priority
         os_ptr->current_prio = activated_ao->priority;
 
-        // empty queue
+        // empty all messages in queue
         while(!MsgQueueIsEmpty(activated_ao->msg_queue))
         {
             Message_t* msg = (Message_t*)MsgQueueGet(activated_ao);

@@ -7,21 +7,28 @@
 
 #define OS_BASEPRI 0x3F
 
+//! OS return codes
 #define OS_SUCCESS           0
 #define OS_INVALID_ARGUMENT  1
 #define OS_MEMORY_BLOCK_FULL 2
 #define OS_ERROR             3
 
-#define OS_MSG_DATA_TYPE    0
 #define OS_MESSAGE_MAX_SIZE 20
 
 // clang-format off
 #define ENABLE_INTERRUPTS() __asm volatile ("cpsie i" ::: "memory");
 #define DISABLE_INTERRUPTS() __asm volatile ("cpsid i" ::: "memory");
 
+/**
+ * @brief see ARM errata 838869, a store immediate with offset at the end of an ISR could
+ *  lead to incorrect interrupt handling. DSB is like a "flush" for pending data that needs
+ *  to be written in the write buffer. ARM considers this problem rare but could happen
+ */
 #define ERRATUM() __asm volatile("dsb" ::: "memory")
+
 // clang-format on
 
+//! compile time assertion
 #define STATIC_ASSERT(X)                                                          \
     ({                                                                            \
         extern int __attribute__((error("assertion failure: '" #X "' not true"))) \

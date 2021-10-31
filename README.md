@@ -2,6 +2,28 @@
 
 Integrated code for deployment on Zumo robots. Let's keep component-level testing in other repositories or other branches.
 
+## Resources and Reading
+
+### Realtime Operating Systems (RTOS) and Active Objects
+
+- [Modern Embedded Programming: Beyond the RTOS](https://embeddedgurus.com/state-space/category/state-machines/)
+  - Very very good article on the "why" of using an event drive/state machine based RTOS
+- [Economics 101: UML in Embedded Systems](https://embeddedgurus.com/state-space/2012/04/economics-101-uml-in-embedded-systems/)
+- [Active Object (AO) Design Pattern for Concurrency](https://www.state-machine.com/active-object)
+- [Application Note Active Objects for Embedded Systems](http://www.state-machine.com/doc/AN_Active_Objects_for_Embedded.pdf)
+- [Active Objext - Embedded Artistry](https://embeddedartistry.com/fieldmanual-terms/active-object/)
+  - Collection of resources (some are the same as the ones linked above)
+
+### CMake
+
+Some examples and reading on CMake and how it works. We're doing it a bit differently per `stm32-cmake` instructions
+
+- [Basic project setup](https://dornerworks.com/blog/moving-embedded-projects-to-cmake/)
+- [CMake Part 1 - The Dark Arts](https://blog.feabhas.com/2021/07/cmake-part-1-the-dark-arts/)
+  - Read the other parts of the series. This blog is good
+- [stm32-cmake](https://github.com/ObKo/stm32-cmake)
+  - check out some of the examples in `stm32-cmake/examples` directory
+
 ## Project Architecture
 
 The Zumo Controller is built on top of the Realtime Micro Kernel (`rmkernel`), a realtime, event-driven, run-to-completion operating systen/scheduler. `rmkernel` follows the [Active Object (AO)](https://www.state-machine.com/active-object) design pattern to eliminate typical concurrency issues like deadlock and race conditions.
@@ -25,8 +47,8 @@ To be implemented, a placeholder for the future (a rough outline)
 
 ## Creating AOs
 
-- File naming: `<name>_ao.c/.h`
-- Add `<name>_ao.c` to `CMakeLists.txt`
+- Add source (`.c`) file to `PROJECT_SOURCES` in `CMakeLists.txt`
+- Clock configuration should go in `rmk_hal_clock_cfg.c`
 - AO source file should contain:
   - All related interrupts
   - An Event Handler
@@ -77,29 +99,29 @@ $ tree -L 2 # with modification
 ├── L4R5ZI.ld # default linker file, taken from stm32-cmake template
 ├── LICENSE
 ├── Makefile # high level automation
-├── README.md 
-├── debug # output directory of make build
-│   ├── _deps # stm32-cmake will generate lots of files under this directory
-│   ├── zumo-controller.bin # we need to flash this
-│   ├── zumo-controller.elf # also generating .elf
-│   └── zumo-controller.hex
+├── README.md
+├── build
+├── debug # output directory of `make debug`
+│   ├── zumo-controller.bin # binary file for flashing
+│   ├── zumo-controller.elf # .elf for debugging
+├── docs
+├── gdb # debugging scripts
 ├── modules
-│   └── stm32-cmake # see README/Requirements for notes on installation
+│   └── stm32-cmake # HAL libraries as CMake project, see README/Requirements for notes on installation
 ├── os
 │   ├── inc # rmkernel headers
 │   └── src # rmkernel sources
 ├── src
-│   ├── app_defs.h # definitions related to the entire application
+│   ├── app_defs.h # definitions needed in the entire application
 │   ├── main.c
 │   ├── os_port_arm_m4.c # OS port to ARM Cortex-M4
-│   ├── rmk_hal_clock_cfg.c # clock configuration
-│   ├── rmk_hal_clock_cfg.h 
-│   ├── startup_stm32l4r5xx.s # don't touch, default template startup script
-│   ├── stm32l4r5xx.h # don't touch default HAL device header
-│   ├── stm32l4xx.h # don't touch, default HAL family header
-│   ├── stm32l4xx_hal_conf.h # don't touch, default configuration
-│   ├── system_stm32l4xx.c # don't touch, default
-│   └── system_stm32l4xx.h # don't touch, default
+│   ├── rmk_hal_clock_cfg.c # system and peripheral clock configuration
+│   ├── rmk_hal_clock_cfg.h
+│   ├── stm # don't touch, default from STM32 libraries
+│   ├── stm32l4xx_hal_conf.h # don't touch, default from STM32 libraries
+│   ├── subsys
+│   ├── watchdog.c
+│   └── watchdog.h
 └── st_nucleo_l4.cfg # openocd configuration for debugging
 ```
 

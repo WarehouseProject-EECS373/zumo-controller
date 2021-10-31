@@ -8,10 +8,12 @@
 #include "app_defs.h"
 #include "stm/stm32l4xx.h"
 
+// only allow button to be pressed once every 100ms
 #define USER_BUTTON_DEBOUNCE_TIME 100
 
 __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 {
+    // button debouncing
     static bool time_set = false;
     static uint32_t last_time = 0;
 
@@ -23,6 +25,7 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
         // check debounce
         if(!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
         {
+            // toggle drive state (enabled and disabled)
             Message_t drive_toggle_msg = {.id = DRIVE_TOGGLE_MSG_ID, .msg_size = sizeof(Message_t)};
             MsgQueuePut(&drive_ss_ao, &drive_toggle_msg);
         }
@@ -35,12 +38,13 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
     OS_ISR_EXIT(&os);
 }
 
-extern void InputHandler(Message_t* msg)
+extern void InputEventHandler(Message_t* msg)
 {
 }
 
 extern void ITCTL_Init()
 {
+    // initialize blue user button interrupt
     GPIO_InitTypeDef gpio_cfg;
     gpio_cfg.Pin = GPIO_PIN_13;
     gpio_cfg.Mode = GPIO_MODE_IT_FALLING;

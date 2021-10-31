@@ -8,10 +8,10 @@
 #include "app_defs.h"
 #include "rmk_hal_clock_cfg.h"
 
-#include "gpio_ao.h"
 #include "subsys/drive_subsystem.h"
 #include "subsys/input_ctl_subsystem.h"
 #include "subsys/reflectance_array_subsystem.h"
+#include "watchdog.h"
 
 //*****************************************************************/
 // Periodic Timing Definitions
@@ -26,11 +26,9 @@
 // Active Object Declarations and Configuration
 //*****************************************************************/
 
-ACTIVE_OBJECT_DECL(heartbeat_ao, HEARTBEAT_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
-
-// ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -45,29 +43,9 @@ extern OS_t os;
 static TimedEventSimple_t hb_event;
 static Message_t hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)};
 
-// static TimedEventSimple_t ir_sensor_read_event;
-// static Message_t ir_sensor_read_msg = {.id = SENSOR_READ_MSG_ID, .msg_size = sizeof(Message_t)};
-
-// static TimedEventSimple_t drive_ss_ctl_loop_event;
-// static Message_t drive_ss_ctl_loop_msg = {.id = DRIVE_TIMED_ACTIVITY_MSG_ID,
-//                                           .msg_size = sizeof(Message_t)};
-
 static TimedEventSimple_t drive_ramp_test_event;
 static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
                                         .msg_size = sizeof(Message_t)};
-
-/**
- * @brief Simple LED heartbeat so we know everything is ok. Tie this into a watchdog eventually.
- *
- * @param msg
- */
-void HeartbeatHandler(Message_t* msg)
-{
-    if(HEARTBEAT_MSG_ID == msg->id)
-    {
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
-    }
-}
 
 void TestObjHandler(Message_t* msg)
 {
@@ -97,34 +75,23 @@ int main()
     Clock_Init();
 
     // peripherals init
-    GPIO_Init();
+    Watchdog_Init();
 
     // initialize subsystems
     Drive_Init();
     ITCTL_Init();
-    // REFARR_Init();
 
     // start subsystems
 
     // initialize all active objects
-    AO_INIT(heartbeat_ao, 6, HeartbeatHandler, HEARTBEAT_QUEUE_SIZE)
+    AO_INIT(watchdog_ao, 6, WatchdogEventHandler, HEARTBEAT_QUEUE_SIZE)
     AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE)
-    AO_INIT(input_ctl_ss_ao, 3, InputHandler, INPUT_CTL_SS_QUEUE_SIZE)
-
-    // AO_INIT(refarr_ss_ao, 3, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE)
+    AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE)
 
     // create and schedule timed events.
-    TimedEventSimpleCreate(&hb_event, &heartbeat_ao, &hb_msg, HEARTBEAT_PERIOD,
+    TimedEventSimpleCreate(&hb_event, &watchdog_ao, &hb_msg, HEARTBEAT_PERIOD,
                            TIMED_EVENT_PERIODIC_TYPE);
     SchedulerAddTimedEvent(&hb_event);
-
-    // TimedEventSimpleCreate(&ir_sensor_read_event, &refarr_ss_ao, &ir_sensor_read_msg,
-    //                        IR_SENSOR_READ_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    // SchedulerAddTimedEvent(&ir_sensor_read_event);
-
-    // TimedEventSimpleCreate(&drive_ss_ctl_loop_event, &drive_ss_ao, &drive_ss_ctl_loop_msg,
-    //                        DRIVE_SS_TIMED_ACTIVITY_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    // SchedulerAddTimedEvent(&drive_ss_ctl_loop_event);
 
     TimedEventSimpleCreate(&drive_ramp_test_event, &drive_ss_ao, &drive_ramp_test_msg,
                            DRIVE_SS_RAMP_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
