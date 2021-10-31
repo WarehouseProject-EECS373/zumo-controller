@@ -108,39 +108,18 @@ $ tree -L 2 # with modification
 - `STLink` - Open source flashing utility
   - <https://github.com/stlink-org/stlink>
   - May also be able to flash device using `.elf` and STM32CubeIDE
+  - `sudo apt install stlink-tools`
+  - For Windows, download the latest release (V1.7.0 on the right) from here: <https://github.com/stlink-org/stlink/releases/tag/v1.7.0> into Program Files (x86).
+    - `cd <path> (C:\Program Files (x86)\stlink-1.7.0-x86_64-w64-mingw32\bin)`
+    - `st-flash.exe write <path/to/bin/file> 0x08000000`
 - `CMake` (3.16+)
   - <https://cmake.org/install/>
+  - `sudo apt install cmake`
 - `ObKo/stm32-cmake`
-
-  ```bash
-  git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake
-  ```
-  
-  Instead,
-  ```bash
-  git checkout develop
-  git submodule update --init --recursive
-  sudo apt install gcc-arm-none-eabi
-  export STM32_TOOLCHAIN_PATH=/usr/bin/arm-none-eabi-gcc
-  
-  Download the latest release (V1.7.0 on the right) from here: https://github.com/stlink-org/stlink/releases/tag/v1.7.0 into Program Files (x86).
-  In Command Prompt, navigate to the bin files in this directory: cd <path> (C:\Program Files (x86)\stlink-1.7.0-x86_64-w64-mingw32\bin)
-  
-  
-  Then, run this command: st-flash.exe write \\wsl$\Ubuntu\home\aashishhari\373\zumo-controller\debug\zumo-controller.bin 0x08000000
-  Note the path name is based on your wsl path, use explorer.exe . and copy paste from the top search bar.
-  
-  Save these two commands using a text editor into a .bat file.  Will need to run this every time we want to flash.
- 
- make debug before running ^ every time you make changes to the src files.
-  ```
-
-## Installation
-
-1. Install CMake and STLink (see above)
-2. `git clone https://github.com/WarehouseProject-EECS373/zumo-controller.git`
-3. `git submodule add https://github.com/ObKo/stm32-cmake.git modules/stm32-cmake`
-4. All set, `make debug` to build, `make flash` to program device
+  After cloning `zume-controller`, run `git submodule update --init --recursive`
+- GCC
+  - `sudo apt install gcc-arm-none-eabi`
+  - `export STM32_TOOLCHAIN_PATH=/usr/bin/arm-none-eabi-gcc`
 
 ## Usage
 
