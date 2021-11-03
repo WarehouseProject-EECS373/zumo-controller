@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include <stm32l4xx.h>
-#include <stm32l4xx_hal.h>
+#include <stm/stm32f4xx.h>
+#include <stm32f4xx_hal.h>
 
 #include "os.h"
 
@@ -78,10 +78,6 @@ extern void Clock_Init()
 
     __HAL_RCC_PWR_CLK_ENABLE();
 
-    __HAL_RCC_LPUART1_CLK_ENABLE();
-
-    __HAL_RCC_DAC1_CLK_ENABLE();
-
     __HAL_RCC_TIM1_CLK_ENABLE();
     __HAL_RCC_TIM4_CLK_ENABLE();
 
@@ -90,8 +86,6 @@ extern void Clock_Init()
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();
-    __HAL_RCC_GPIOF_CLK_ENABLE();
-    __HAL_RCC_GPIOG_CLK_ENABLE();
 
     // set systick frequency (1ms)
     SysTick_Config(SystemCoreClock / 1000);
