@@ -1,18 +1,19 @@
 #include "input_ctl_subsystem.h"
 
 #include <stm32f4xx_hal.h>
+#include <stm/stm32f4xx.h>
 
 #include <os.h>
 #include <os_msg.h>
 
 #include "app_defs.h"
-#include "stm/stm32f4xx.h"
+
 
 // only allow button to be pressed once every 100ms
 #define USER_BUTTON_DEBOUNCE_TIME 100
 
 #define USER_BUTTON_PORT GPIOC
-#define USER_BUTTON_PIN  13
+#define USER_BUTTON_PIN  GPIO_PIN_13
 
 __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 {
@@ -52,6 +53,7 @@ extern void ITCTL_Init()
     gpio_cfg.Pin = USER_BUTTON_PIN;
     gpio_cfg.Mode = GPIO_MODE_IT_FALLING;
     gpio_cfg.Pull = GPIO_NOPULL;
+    gpio_cfg.Speed = GPIO_SPEED_FREQ_HIGH;
 
     HAL_GPIO_Init(USER_BUTTON_PORT, &gpio_cfg);
 
