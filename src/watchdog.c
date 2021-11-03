@@ -9,16 +9,17 @@
 
 extern void WatchdogEventHandler(Message_t* msg)
 {
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 }
 
 extern void Watchdog_Init()
 {
     GPIO_InitTypeDef gpio_cfg;
 
-    gpio_cfg.Pin = GPIO_PIN_7;
+    gpio_cfg.Pin = GPIO_PIN_5;
     gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
     gpio_cfg.Pull = GPIO_NOPULL;
     gpio_cfg.Speed = GPIO_SPEED_FREQ_HIGH;
 
-    HAL_GPIO_Init(GPIOB, &gpio_cfg);
+    HAL_GPIO_Init(GPIOA, &gpio_cfg);
 }

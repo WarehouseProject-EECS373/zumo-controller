@@ -8,10 +8,10 @@
 
 // pin configurations for drive
 
-#define MOTOR_PWM_TIMER_RIGHT   TIM3
-#define MOTOR_PWM_TIMER_LEFT   TIM4
-#define RIGHT_PWM_CHANNEL TIM_CHANNEL_2
-#define LEFT_PWM_CHANNEL  TIM_CHANNEL_1
+#define MOTOR_PWM_TIMER_RIGHT TIM3
+#define MOTOR_PWM_TIMER_LEFT  TIM4
+#define RIGHT_PWM_CHANNEL     TIM_CHANNEL_2
+#define LEFT_PWM_CHANNEL      TIM_CHANNEL_1
 
 #define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_7
 #define PWM_RIGHT_OUTPUT_PORT GPIOC
@@ -368,7 +368,6 @@ void ConfigureTimer()
     motor_pwm_left.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 
     HAL_TIM_PWM_Init(&motor_pwm_left);
-
 
     TIM_OC_InitTypeDef tim_oc = {0};
 

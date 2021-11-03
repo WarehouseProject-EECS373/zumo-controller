@@ -53,6 +53,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::F4::CORTEX
     HAL::STM32::F4::GPIO
     HAL::STM32::F4::TIM
+    HAL::STM32::F4::EXTI
     HAL::STM32::F4::TIMEx
     HAL::STM32::F4::PWR
     HAL::STM32::F4::PWREx
