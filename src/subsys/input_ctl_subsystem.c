@@ -8,7 +8,6 @@
 
 #include "app_defs.h"
 
-
 // only allow button to be pressed once every 100ms
 #define USER_BUTTON_DEBOUNCE_TIME 100
 
