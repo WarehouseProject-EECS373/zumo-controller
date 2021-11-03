@@ -18,7 +18,7 @@
 #define PWM_RIGHT_AF          GPIO_AF2_TIM3
 
 #define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_6
-#define PWM_LEFT_OUTPUT_PORT GPIOC
+#define PWM_LEFT_OUTPUT_PORT GPIOB
 #define PWM_LEFT_AF          GPIO_AF2_TIM4
 
 #define RIGHT_DIR_PORT GPIOA
@@ -268,8 +268,6 @@ void ToggleDriveState()
 
 extern void DriveEventHandler(Message_t* msg)
 {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-
     if(msg->id == DRIVE_TOGGLE_MSG_ID)
     {
         ToggleDriveState();
@@ -302,8 +300,6 @@ extern void DriveEventHandler(Message_t* msg)
     {
         RampTestIteration();
     }
-
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 }
 
 /**
@@ -314,7 +310,6 @@ void ConfigureGPIO()
 {
     GPIO_InitTypeDef pwm_gpio_cfg = {0};
     GPIO_InitTypeDef dir_gpio_cfg = {0};
-    GPIO_InitTypeDef gpio_cfg = {0};
 
     // PWM output
     pwm_gpio_cfg.Pin = PWM_LEFT_OUTPUT_PIN;
@@ -347,14 +342,6 @@ void ConfigureGPIO()
     dir_gpio_cfg.Speed = GPIO_SPEED_LOW;
 
     HAL_GPIO_Init(RIGHT_DIR_PORT, &dir_gpio_cfg);
-
-    // extra gpio for testing
-    gpio_cfg.Pin = GPIO_PIN_8;
-    gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
-    gpio_cfg.Pull = GPIO_NOPULL;
-    gpio_cfg.Speed = GPIO_SPEED_LOW;
-
-    HAL_GPIO_Init(GPIOC, &gpio_cfg);
 }
 
 /**

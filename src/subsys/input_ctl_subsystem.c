@@ -23,7 +23,7 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
     OS_ISR_ENTER(&os);
 
     // if triggered by GPIO_13
-    if(__HAL_GPIO_EXTI_GET_FLAG(USER_BUTTON_PIN))
+    if(__HAL_GPIO_EXTI_GET_FLAG(USER_BUTTON_PIN) != RESET)
     {
         // check debounce
         if(!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
