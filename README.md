@@ -69,7 +69,7 @@ To be implemented, a placeholder for the future (a rough outline)
 
 Periodic event to read from reflectance sensors and update actual position in drive subsystem.
 Periodic task to recalculate control loop.
-
+[Reflectance sensor array info/pinout](https://www.pololu.com/docs/0J57/2.c) 
 ## Peripheral Mapping
 
 [Nucleo-L4R5ZI Pinout](https://os.mbed.com/platforms/NUCLEO-L4R5ZI/)
