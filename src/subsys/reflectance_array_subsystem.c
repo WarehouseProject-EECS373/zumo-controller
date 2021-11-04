@@ -1,10 +1,10 @@
 #include "reflectance_array_subsystem.h"
 
 #include <os.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f4xx_hal.h>
 
 #include "app_defs.h"
-#include "stm/stm32l4xx.h"
+#include "stm/stm32f4xx.h"
 
 extern void REFARR_Init()
 {

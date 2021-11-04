@@ -1,30 +1,31 @@
 #include "drive_subsystem.h"
 
 #include <os.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f4xx_hal.h>
 
 #include "app_defs.h"
-#include "stm/stm32l4xx.h"
+#include "stm/stm32f4xx.h"
 
 // pin configurations for drive
 
-#define MOTOR_PWM_TIMER   TIM4
-#define RIGHT_PWM_CHANNEL TIM_CHANNEL_4
-#define LEFT_PWM_CHANNEL  TIM_CHANNEL_3
+#define MOTOR_PWM_TIMER_RIGHT TIM3
+#define MOTOR_PWM_TIMER_LEFT  TIM4
+#define RIGHT_PWM_CHANNEL     TIM_CHANNEL_2
+#define LEFT_PWM_CHANNEL      TIM_CHANNEL_1
 
-#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_15
-#define PWM_RIGHT_OUTPUT_PORT GPIOD
-#define PWM_RIGHT_AF          GPIO_AF2_TIM4
+#define PWM_RIGHT_OUTPUT_PIN  GPIO_PIN_7
+#define PWM_RIGHT_OUTPUT_PORT GPIOC
+#define PWM_RIGHT_AF          GPIO_AF2_TIM3
 
-#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_14
-#define PWM_LEFT_OUTPUT_PORT GPIOD
+#define PWM_LEFT_OUTPUT_PIN  GPIO_PIN_6
+#define PWM_LEFT_OUTPUT_PORT GPIOB
 #define PWM_LEFT_AF          GPIO_AF2_TIM4
 
-#define RIGHT_DIR_PORT GPIOF
-#define RIGHT_DIR_PIN  GPIO_PIN_12
+#define RIGHT_DIR_PORT GPIOA
+#define RIGHT_DIR_PIN  GPIO_PIN_8
 
-#define LEFT_DIR_PORT GPIOF
-#define LEFT_DIR_PIN  GPIO_PIN_13
+#define LEFT_DIR_PORT GPIOA
+#define LEFT_DIR_PIN  GPIO_PIN_9
 
 // timer clock configuration
 #define PRESCALER     1 // 16e6MHz / (1 + 1) = 8MHz
@@ -73,7 +74,8 @@ static uint32_t state = DRIVE_STATE_ENABLED;
 static uint32_t drive_mode = DRIVE_MODE_DRIVE;
 
 // PWM timer
-static TIM_HandleTypeDef motor_pwm;
+static TIM_HandleTypeDef motor_pwm_right;
+static TIM_HandleTypeDef motor_pwm_left;
 
 void HandleDriveLineSetpoint(DriveControlMessage_t* msg);
 void HandleTimedActivity(Message_t* msg);
@@ -266,8 +268,6 @@ void ToggleDriveState()
 
 extern void DriveEventHandler(Message_t* msg)
 {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-
     if(msg->id == DRIVE_TOGGLE_MSG_ID)
     {
         ToggleDriveState();
@@ -300,8 +300,6 @@ extern void DriveEventHandler(Message_t* msg)
     {
         RampTestIteration();
     }
-
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 }
 
 /**
@@ -312,7 +310,6 @@ void ConfigureGPIO()
 {
     GPIO_InitTypeDef pwm_gpio_cfg = {0};
     GPIO_InitTypeDef dir_gpio_cfg = {0};
-    GPIO_InitTypeDef gpio_cfg = {0};
 
     // PWM output
     pwm_gpio_cfg.Pin = PWM_LEFT_OUTPUT_PIN;
@@ -345,14 +342,6 @@ void ConfigureGPIO()
     dir_gpio_cfg.Speed = GPIO_SPEED_LOW;
 
     HAL_GPIO_Init(RIGHT_DIR_PORT, &dir_gpio_cfg);
-
-    // extra gpio for testing
-    gpio_cfg.Pin = GPIO_PIN_8;
-    gpio_cfg.Mode = GPIO_MODE_OUTPUT_PP;
-    gpio_cfg.Pull = GPIO_NOPULL;
-    gpio_cfg.Speed = GPIO_SPEED_LOW;
-
-    HAL_GPIO_Init(GPIOC, &gpio_cfg);
 }
 
 /**
@@ -361,25 +350,34 @@ void ConfigureGPIO()
  */
 void ConfigureTimer()
 {
-    motor_pwm.Instance = MOTOR_PWM_TIMER;
-    motor_pwm.Init.Prescaler = PRESCALER;
-    motor_pwm.Channel = LEFT_PWM_CHANNEL | RIGHT_PWM_CHANNEL;
-    motor_pwm.Init.CounterMode = TIM_COUNTERMODE_UP;
-    motor_pwm.Init.Period = PERIOD;
-    motor_pwm.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    motor_pwm.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+    motor_pwm_right.Instance = MOTOR_PWM_TIMER_RIGHT;
+    motor_pwm_right.Init.Prescaler = PRESCALER;
+    motor_pwm_right.Channel = RIGHT_PWM_CHANNEL;
+    motor_pwm_right.Init.CounterMode = TIM_COUNTERMODE_UP;
+    motor_pwm_right.Init.Period = PERIOD;
+    motor_pwm_right.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    motor_pwm_right.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 
-    HAL_TIM_PWM_Init(&motor_pwm);
+    HAL_TIM_PWM_Init(&motor_pwm_right);
 
-    TIM_OC_InitTypeDef tim3_oc = {0};
+    motor_pwm_left.Instance = MOTOR_PWM_TIMER_LEFT;
+    motor_pwm_left.Init.Prescaler = PRESCALER;
+    motor_pwm_left.Channel = LEFT_PWM_CHANNEL;
+    motor_pwm_left.Init.Period = PERIOD;
+    motor_pwm_left.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    motor_pwm_left.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 
-    tim3_oc.OCMode = TIM_OCMODE_PWM1;
-    tim3_oc.Pulse = 0;
-    tim3_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
-    tim3_oc.OCFastMode = TIM_OCFAST_DISABLE;
+    HAL_TIM_PWM_Init(&motor_pwm_left);
 
-    HAL_TIM_PWM_ConfigChannel(&motor_pwm, &tim3_oc, LEFT_PWM_CHANNEL);
-    HAL_TIM_PWM_ConfigChannel(&motor_pwm, &tim3_oc, RIGHT_PWM_CHANNEL);
+    TIM_OC_InitTypeDef tim_oc = {0};
+
+    tim_oc.OCMode = TIM_OCMODE_PWM1;
+    tim_oc.Pulse = 0;
+    tim_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+    tim_oc.OCFastMode = TIM_OCFAST_DISABLE;
+
+    HAL_TIM_PWM_ConfigChannel(&motor_pwm_left, &tim_oc, LEFT_PWM_CHANNEL);
+    HAL_TIM_PWM_ConfigChannel(&motor_pwm_right, &tim_oc, RIGHT_PWM_CHANNEL);
 }
 
 extern void Drive_Init()
@@ -437,9 +435,9 @@ void SetOutoutPercent(float left_percent_output, float right_percent_output)
     }
 
     // set CCR and restart timer
-    __HAL_TIM_SET_COMPARE(&motor_pwm, LEFT_PWM_CHANNEL, DUTY_PULSE(left_percent_output));
-    __HAL_TIM_SET_COMPARE(&motor_pwm, RIGHT_PWM_CHANNEL, DUTY_PULSE(right_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm_left, LEFT_PWM_CHANNEL, DUTY_PULSE(left_percent_output));
+    __HAL_TIM_SET_COMPARE(&motor_pwm_right, RIGHT_PWM_CHANNEL, DUTY_PULSE(right_percent_output));
 
-    HAL_TIM_PWM_Start(&motor_pwm, LEFT_PWM_CHANNEL);
-    HAL_TIM_PWM_Start(&motor_pwm, RIGHT_PWM_CHANNEL);
+    HAL_TIM_PWM_Start(&motor_pwm_left, LEFT_PWM_CHANNEL);
+    HAL_TIM_PWM_Start(&motor_pwm_right, RIGHT_PWM_CHANNEL);
 }

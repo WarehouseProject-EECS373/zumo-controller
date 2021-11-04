@@ -6,13 +6,13 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/modules/stm32-cmake/cmake/s
 project(zumo-controller C ASM)
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
-add_definitions(-DSTM32L4R5xx)
+add_definitions(-DSTM32F401xE)
 
-stm32_fetch_cmsis(L4)
-stm32_fetch_hal(L4)
+stm32_fetch_cmsis(F4)
+stm32_fetch_hal(F4)
 
-find_package(CMSIS COMPONENTS STM32L4R5ZI REQUIRED)
-find_package(HAL COMPONENTS STM32L4 REQUIRED)
+find_package(CMSIS COMPONENTS STM32F401RE REQUIRED)
+find_package(HAL COMPONENTS STM32F4 REQUIRED)
 
 set(CMAKE_ASM_FLAGS -c)
 
@@ -37,11 +37,11 @@ set(PROJECT_SOURCES
 )
 
 set(STM_SOURCES
-    src/stm/startup_stm32l4r5xx.s
-    src/stm/system_stm32l4xx.c
-    src/stm32l4xx_hal_conf.h
-    src/stm/stm32l4r5xx.h
-    src/stm/system_stm32l4xx.h
+    src/stm/startup_stm32f401xe.s
+    src/stm/system_stm32f4xx.c
+    src/stm32f4xx_hal_conf.h
+    src/stm/stm32f401xe.h
+    src/stm/system_stm32f4xx.h
 )
     
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${OS_SOURCES} ${STM_SOURCES})
@@ -49,17 +49,18 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${OS_SOURCES} ${STM_SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/os/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    HAL::STM32::L4::RCC
-    HAL::STM32::L4::CORTEX
-    HAL::STM32::L4::GPIO
-    HAL::STM32::L4::TIM
-    HAL::STM32::L4::TIMEx
-    HAL::STM32::L4::PWR
-    HAL::STM32::L4::PWREx
-    CMSIS::STM32::L4
+    HAL::STM32::F4::RCC
+    HAL::STM32::F4::CORTEX
+    HAL::STM32::F4::GPIO
+    HAL::STM32::F4::TIM
+    HAL::STM32::F4::EXTI
+    HAL::STM32::F4::TIMEx
+    HAL::STM32::F4::PWR
+    HAL::STM32::F4::PWREx
+    CMSIS::STM32::F4
     STM32::NoSys)
 
-stm32_add_linker_script(${PROJECT_NAME} PRIVATE L4R5ZI.ld)
+stm32_add_linker_script(${PROJECT_NAME} PRIVATE F401RE.ld)
 
 stm32_generate_binary_file(${PROJECT_NAME})
 stm32_generate_hex_file(${PROJECT_NAME})

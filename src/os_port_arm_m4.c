@@ -1,6 +1,6 @@
 #include <os.h>
 
-#include <stm32l4r5xx.h>
+#include <stm/stm32f401xe.h>
 
 /**
  *  NOTE

@@ -2,8 +2,8 @@
 #define RMK_HAL_CLOCK_CFG_H
 
 #include <stdint.h>
-#include <stm32l4xx.h>
-#include <stm32l4xx_hal.h>
+#include <stm/stm32f4xx.h>
+#include <stm32f4xx_hal.h>
 
 /**
  * @brief ISR for handling millisecond clock interrupt. Not kernel aware
