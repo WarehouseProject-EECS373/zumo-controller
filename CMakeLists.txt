@@ -52,7 +52,7 @@ add_executable(${PROJECT_NAME}
 )
 
 
-add_subdirectory(rmkernel)
+add_subdirectory(modules/rmkernel)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     rmkernel
