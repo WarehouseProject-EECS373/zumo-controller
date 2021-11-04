@@ -6,6 +6,10 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/modules/stm32-cmake/cmake/s
 project(zumo-controller C ASM)
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
+
+add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+
+
 add_definitions(-DSTM32F401xE)
 
 stm32_fetch_cmsis(F4)
@@ -61,10 +65,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::F4::CORTEX
     HAL::STM32::F4::GPIO
     HAL::STM32::F4::TIM
-    HAL::STM32::F4::EXTI
     HAL::STM32::F4::TIMEx
-    HAL::STM32::F4::PWR
-    HAL::STM32::F4::PWREx
     CMSIS::STM32::F4
     STM32::NoSys)
 

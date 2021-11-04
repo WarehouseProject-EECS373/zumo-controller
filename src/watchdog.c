@@ -9,7 +9,10 @@
 
 extern void WatchdogEventHandler(Message_t* msg)
 {
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    if (HEARTBEAT_MSG_ID == msg->id)
+    {
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    }
 }
 
 extern void Watchdog_Init()

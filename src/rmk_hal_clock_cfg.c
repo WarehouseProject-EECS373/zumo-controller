@@ -31,6 +31,8 @@ extern uint32_t HAL_GetTick(void)
 
 extern HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
+    UNUSED(TickPriority);
+
     os.time = 0;
     __TIM2_CLK_ENABLE();
 

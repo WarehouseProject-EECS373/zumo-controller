@@ -43,6 +43,7 @@ __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 
 extern void InputEventHandler(Message_t* msg)
 {
+    UNUSED(msg);
 }
 
 extern void ITCTL_Init()

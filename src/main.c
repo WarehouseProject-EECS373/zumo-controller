@@ -47,11 +47,6 @@ static TimedEventSimple_t drive_ramp_test_event;
 static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
                                         .msg_size = sizeof(Message_t)};
 
-void TestObjHandler(Message_t* msg)
-{
-    // test obj handler, does nothing for now
-}
-
 void OnKernelInit()
 {
     HAL_NVIC_SetPriority(SysTick_IRQn, OS_BASEPRI, 0);

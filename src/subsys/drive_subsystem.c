@@ -144,6 +144,8 @@ float ApplyDriveDeadband(float value)
  */
 void HandleTimedActivity(Message_t* msg)
 {
+    UNUSED(msg);
+
     float current_time = (float)OSGetTime();
 
     // position error (how far away from line are we and in what direction)
