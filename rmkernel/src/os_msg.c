@@ -1,7 +1,7 @@
 
+#include "inc/os.h"
+#include "inc/os_msg.h"
 
-#include "os_msg.h"
-#include "os.h"
 
 static uint16_t GetAvailableCount(MessageQueue_t* q);
 

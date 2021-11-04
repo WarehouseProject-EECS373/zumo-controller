@@ -1,5 +1,5 @@
-#include "os.h"
-#include "os_msg.h"
+#include "inc/os.h"
+#include "inc/os_msg.h"
 
 //! internal OS instance pointer
 static OS_t* os_ptr;
