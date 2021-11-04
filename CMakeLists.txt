@@ -16,14 +16,6 @@ find_package(HAL COMPONENTS STM32F4 REQUIRED)
 
 set(CMAKE_ASM_FLAGS -c)
 
-
-#set(OS_SOURCES
-#    os/src/os_mem.c
-#    os/src/os_msg.c
-#    os/src/os_util.c
-#    os/src/os.c
-#)
-
 set(PROJECT_SOURCES
     src/app_defs.h
     
@@ -47,7 +39,6 @@ set(STM_SOURCES
     
 add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
-    #    ${OS_SOURCES}
     ${STM_SOURCES}
 )
 
@@ -63,7 +54,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_SOURCE_DIR}/src
-        #        ${CMAKE_SOURCE_DIR}/os/inc
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
