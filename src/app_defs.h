@@ -29,6 +29,20 @@ typedef struct DriveBaseVelocityMessage_s
     float base_velocity;
 } DriveBaseVelocityMessage_t;
 
+typedef struct UartSmallPacketMessage_s
+{
+    Message_t base;
+    uint8_t length;
+    uint8_t payload[8];
+} UartSmallPacketMessage_t;
+
+typedef struct UartLargePacketMessage_s
+{
+    Message_t base;
+    uint16_t length;
+    uint16_t mem_key;
+} UartLargePacketMessage_t;
+
 //*****************************************************************/
 // MESSAGE IDs
 //*****************************************************************/
@@ -57,6 +71,10 @@ typedef struct DriveBaseVelocityMessage_s
 
 #define PUSH_BUTTON_PRESSED_MSG_ID 0x61
 
+// comms subsystem
+#define UART_SMALL_PACKET_MSG_ID 0x81
+#define UART_LARGE_PACKET_MSG_ID 0x82
+
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
 //*****************************************************************/
@@ -67,11 +85,13 @@ typedef struct DriveBaseVelocityMessage_s
 #define REFARR_SS_QUEUE_SIZE    8
 #define INPUT_CTL_SS_QUEUE_SIZE 8
 #define TEST_OBJ_QUEUE_SIZE     8
+#define COMMS_QUEUE_SIZE        8
+
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
-
+ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
 // ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 #endif

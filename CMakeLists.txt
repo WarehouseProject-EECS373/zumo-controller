@@ -31,6 +31,7 @@ set(PROJECT_SOURCES
     src/subsys/drive_subsystem.c
     src/subsys/input_ctl_subsystem.c
     src/subsys/reflectance_array_subsystem.c
+    src/subsys/comms_subsystem.c
 )
 
 set(STM_SOURCES
@@ -66,6 +67,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::F4::GPIO
     HAL::STM32::F4::TIM
     HAL::STM32::F4::TIMEx
+    HAL::STM32::F4::UART
     CMSIS::STM32::F4
     STM32::NoSys)
 

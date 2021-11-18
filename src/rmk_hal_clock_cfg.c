@@ -79,6 +79,8 @@ extern void Clock_Init()
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
     __HAL_RCC_PWR_CLK_ENABLE();
+    
+    __HAL_RCC_USART6_CLK_ENABLE();
 
     __HAL_RCC_TIM3_CLK_ENABLE();
     __HAL_RCC_TIM4_CLK_ENABLE();
