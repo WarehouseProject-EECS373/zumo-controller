@@ -68,6 +68,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     HAL::STM32::F4::TIM
     HAL::STM32::F4::TIMEx
     HAL::STM32::F4::UART
+    HAL::STM32::F4::DMA
     CMSIS::STM32::F4
     STM32::NoSys)
 

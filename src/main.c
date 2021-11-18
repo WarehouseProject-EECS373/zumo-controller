@@ -53,6 +53,10 @@ static TimedEventSimple_t drive_ramp_test_event;
 static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
                                         .msg_size = sizeof(Message_t)};
 
+static TimedEventSimple_t test_uart_event;
+static UartSmallPacketMessage_t uart_msg;
+static uint8_t uart_msg_buffer[4] = {'h', 'e', 'l', 'l'};
+
 static void TimedEventSetup();
 
 static void TimedEventSetup()
@@ -65,6 +69,14 @@ static void TimedEventSetup()
     TimedEventSimpleCreate(&drive_ramp_test_event, &drive_ss_ao, &drive_ramp_test_msg,
                            DRIVE_SS_RAMP_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
     SchedulerAddTimedEvent(&drive_ramp_test_event);
+
+    uart_msg.base.id = UART_SMALL_PACKET_MSG_ID;
+    uart_msg.base.msg_size = sizeof(UartSmallPacketMessage_t);
+    uart_msg.length = 4;
+    os_memcpy(uart_msg.payload, uart_msg_buffer, 4);
+
+    TimedEventSimpleCreate(&test_uart_event, &comms_ss_ao, &uart_msg, COMMS_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&test_uart_event);
 }
 
 void OnKernelInit()

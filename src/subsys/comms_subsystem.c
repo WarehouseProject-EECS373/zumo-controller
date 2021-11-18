@@ -11,10 +11,18 @@
 #define UART_TX_TIMEOUT 10
 
 UART_HandleTypeDef uart_handle;
+DMA_HandleTypeDef dma_uart_tx_handle;
 
 static void ProcessSmallMessage(UartSmallPacketMessage_t* msg);
 static void ProcessLargeMessage(UartLargePacketMessage_t* msg);
 static void SendMessage(void* buffer, uint16_t length);
+
+__attribute__((__interrupt__)) extern void DMA1_Stream6_IRQHandler()
+{
+    OS_ISR_ENTER();
+    __HAL_DMA_CLEAR_FLAG(&dma_uart_tx_handle, __HAL_DMA_GET_TC_FLAG_INDEX(&dma_uart_tx_handle));
+    OS_ISR_EXIT();
+}
 
 extern void Comms_Init()
 {
@@ -27,6 +35,25 @@ extern void Comms_Init()
     gpio_cfg.Alternate = GPIO_AF8_USART6;
 
     HAL_GPIO_Init(GPIOA, &gpio_cfg);
+
+    dma_uart_tx_handle.Instance = DMA2_Stream6;
+    dma_uart_tx_handle.Init.Channel = DMA_CHANNEL_5;
+    dma_uart_tx_handle.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    dma_uart_tx_handle.Init.PeriphInc = DMA_PINC_DISABLE;
+    dma_uart_tx_handle.Init.MemInc = DMA_MINC_ENABLE;
+    dma_uart_tx_handle.Init.PeriphDataAlignment = DMA_MDATAALIGN_BYTE;
+    dma_uart_tx_handle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    dma_uart_tx_handle.Init.Mode = DMA_NORMAL;
+    dma_uart_tx_handle.Init.Priority = DMA_PRIORITY_LOW;
+    dma_uart_tx_handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+    HAL_DMA_Init(&dma_uart_tx_handle);
+
+    __HAL_LINKDMA(&uart_handle, hdmatx, dma_uart_tx_handle);
+
+    HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+
 
     uart_handle.Instance = USART6;
     uart_handle.Init.BaudRate = 115200;
@@ -65,5 +92,5 @@ static void ProcessLargeMessage(UartLargePacketMessage_t* msg)
 
 static void SendMessage(void* buffer, uint16_t length)
 {
-    HAL_UART_Transmit(&uart_handle, (uint8_t*)buffer, length, UART_TX_TIMEOUT);
+    HAL_UART_Transmit_DMA(&uart_handle, (uint8_t*)buffer, length);
 }
