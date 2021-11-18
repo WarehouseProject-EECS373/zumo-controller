@@ -61,7 +61,7 @@ static void ProcessLargeMessage(UartLargePacketMessage_t* msg)
 {
     uint8_t* buffer = OSMemoryBlockGet(msg->mem_key);
     SendMessage(buffer, msg->length);
-   // OSMemoryFreeBlock(msg->mem_key);
+   OSMemoryFreeBlock(msg->mem_key);
 }
 
 static void SendMessage(void* buffer, uint16_t length)

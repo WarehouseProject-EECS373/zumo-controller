@@ -53,15 +53,6 @@ static TimedEventSimple_t drive_ramp_test_event;
 static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
                                         .msg_size = sizeof(Message_t)};
 
-static TimedEventSimple_t test_short_uart_msg;
-static UartSmallPacketMessage_t uart_short_msg;
-
-static TimedEventSimple_t test_long_uart_msg;
-static UartLargePacketMessage_t uart_large_msg;
-
-static const char* test_str = "hello this test\r\n";
-
-
 static void TimedEventSetup();
 
 static void TimedEventSetup()
@@ -74,30 +65,6 @@ static void TimedEventSetup()
     TimedEventSimpleCreate(&drive_ramp_test_event, &drive_ss_ao, &drive_ramp_test_msg,
                            DRIVE_SS_RAMP_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
     SchedulerAddTimedEvent(&drive_ramp_test_event);
-
-
-    uart_short_msg.base.id = UART_SMALL_PACKET_MSG_ID;
-    uart_short_msg.base.msg_size = sizeof(UartSmallPacketMessage_t);
-    uart_short_msg.length = 8;
-    uint8_t buffer[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-    os_memcpy(uart_short_msg.payload, buffer, 8);
-
-    TimedEventSimpleCreate(&test_short_uart_msg, &comms_ss_ao, &uart_short_msg, COMMS_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    SchedulerAddTimedEvent(&test_short_uart_msg);
-
-    uint16_t key;
-    OSStatus_t status;
-    uint8_t *block = OSMemoryBlockNew(&key, MEMORY_BLOCK_32, &status);
-    
-    os_memcpy(block, test_str, strlen(test_str));
-    
-    uart_large_msg.base.id = UART_LARGE_PACKET_MSG_ID;
-    uart_large_msg.base.msg_size = sizeof(UartLargePacketMessage_t);
-    uart_large_msg.length = strlen(test_str);
-    uart_large_msg.mem_key = key;
-
-    TimedEventSimpleCreate(&test_long_uart_msg, &comms_ss_ao, &uart_large_msg, COMMS_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    SchedulerAddTimedEvent(&test_long_uart_msg);
 }
 
 void OnKernelInit()
