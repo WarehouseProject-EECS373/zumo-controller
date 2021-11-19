@@ -28,6 +28,7 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
     
     if(__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
     {
+        
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
         if (UART_RX_BUFFER_SIZE == rx_buffer_count)
         {
@@ -37,7 +38,7 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 
     HAL_NVIC_ClearPendingIRQ(USART6_IRQn);
 
-    __HAL_UART_ENABLE_IT(&uart_handle, UART_IT_RXNE);
+//    __HAL_UART_ENABLE_IT(&uart_handle, UART_IT_RXNE);
 
     OS_ISR_EXIT();
 }
