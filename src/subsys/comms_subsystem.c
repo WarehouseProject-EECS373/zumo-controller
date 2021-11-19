@@ -17,7 +17,7 @@ static void ProcessSmallMessage(UartSmallPacketMessage_t* msg);
 static void ProcessLargeMessage(UartLargePacketMessage_t* msg);
 static void SendMessage(void* buffer, uint16_t length);
 
-__attribute__((__interrupt__)) extern void DMA1_Stream6_IRQHandler()
+__attribute__((__interrupt__)) extern void DMA1_Stream7_IRQHandler()
 {
     OS_ISR_ENTER();
     __HAL_DMA_CLEAR_FLAG(&dma_uart_tx_handle, __HAL_DMA_GET_TC_FLAG_INDEX(&dma_uart_tx_handle));
@@ -36,7 +36,7 @@ extern void Comms_Init()
 
     HAL_GPIO_Init(GPIOA, &gpio_cfg);
 
-    dma_uart_tx_handle.Instance = DMA2_Stream6;
+    dma_uart_tx_handle.Instance = DMA2_Stream7;
     dma_uart_tx_handle.Init.Channel = DMA_CHANNEL_5;
     dma_uart_tx_handle.Init.Direction = DMA_MEMORY_TO_PERIPH;
     dma_uart_tx_handle.Init.PeriphInc = DMA_PINC_DISABLE;
@@ -51,8 +51,8 @@ extern void Comms_Init()
 
     __HAL_LINKDMA(&uart_handle, hdmatx, dma_uart_tx_handle);
 
-    HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+    HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 
     uart_handle.Instance = USART6;
@@ -92,5 +92,5 @@ static void ProcessLargeMessage(UartLargePacketMessage_t* msg)
 
 static void SendMessage(void* buffer, uint16_t length)
 {
-    HAL_UART_Transmit_DMA(&uart_handle, (uint8_t*)buffer, length);
+    HAL_UART_Transmit(&uart_handle, (uint8_t*)buffer, length, UART_TX_TIMEOUT);
 }
