@@ -10,11 +10,37 @@
 
 #define UART_TX_TIMEOUT 10
 
+#define UART_RX_BUFFER_SIZE 8
+
 UART_HandleTypeDef uart_handle;
+
+static volatile uint8_t rx_buffer[UART_RX_BUFFER_SIZE];
+static volatile uint32_t rx_buffer_count = 0;
+
 
 static void ProcessSmallMessage(UartSmallPacketMessage_t* msg);
 static void ProcessLargeMessage(UartLargePacketMessage_t* msg);
 static void SendMessage(void* buffer, uint16_t length);
+
+__attribute__((__interrupt__)) extern void USART6_IRQHandler()
+{
+    OS_ISR_ENTER();
+    
+    if(__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
+    {
+        rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
+        if (UART_RX_BUFFER_SIZE == rx_buffer_count)
+        {
+            rx_buffer_count = 0;
+        }
+    }
+
+    HAL_NVIC_ClearPendingIRQ(USART6_IRQn);
+
+    __HAL_UART_ENABLE_IT(&uart_handle, UART_IT_RXNE);
+
+    OS_ISR_EXIT();
+}
 
 extern void Comms_Init()
 {
@@ -37,6 +63,11 @@ extern void Comms_Init()
     uart_handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
 
     HAL_UART_Init(&uart_handle);
+
+    HAL_NVIC_SetPriority(USART6_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(USART6_IRQn);
+
+    __HAL_UART_ENABLE_IT(&uart_handle, UART_IT_RXNE);
 }
 
 extern void CommsEventHandler(Message_t* msg)
