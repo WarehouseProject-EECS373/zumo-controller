@@ -26,7 +26,6 @@
 #define HEARTBEAT_PERIOD               500
 #define IR_SENSOR_READ_PERIOD          3
 #define DRIVE_SS_TIMED_ACTIVITY_PERIOD 5
-#define DRIVE_SS_RAMP_TEST_PERIOD      100
 #define COMMS_TEST_PERIOD              225
 
 //*****************************************************************/
@@ -53,10 +52,6 @@ extern OS_t os;
 static TimedEventSimple_t hb_event;
 static Message_t hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)};
 
-static TimedEventSimple_t drive_ramp_test_event;
-static Message_t drive_ramp_test_msg = {.id = DRIVE_RAMP_TEST_ITERATION_MSG_ID,
-                                        .msg_size = sizeof(Message_t)};
-
 static void TimedEventSetup();
 
 static void TimedEventSetup()
@@ -65,11 +60,6 @@ static void TimedEventSetup()
     TimedEventSimpleCreate(&hb_event, &watchdog_ao, &hb_msg, HEARTBEAT_PERIOD,
                            TIMED_EVENT_PERIODIC_TYPE);
     SchedulerAddTimedEvent(&hb_event);
-
-    TimedEventSimpleCreate(&drive_ramp_test_event, &drive_ss_ao, &drive_ramp_test_msg,
-                           DRIVE_SS_RAMP_TEST_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    SchedulerAddTimedEvent(&drive_ramp_test_event);
-
 }
 
 void OnKernelInit()

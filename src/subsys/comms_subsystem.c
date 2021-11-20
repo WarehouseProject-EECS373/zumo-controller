@@ -58,7 +58,7 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 
 static void UnpackMessage()
 {
-    if (MSG_DISPATCH_ID == rx_buffer[0])
+    if (MSG_DISPATCH_ID == rx_buffer[MESSAGE_ID_IDX])
     {
         DispatchMessage_t dmsg;
         dmsg.base.id = SM_DISPATCH_FROM_IDLE_MSG_ID;

@@ -69,14 +69,15 @@ static void HandleIdleState(Message_t *msg)
         destination_bay_id = dmsg->bay_id;
         destination_aisle_id = dmsg->aisle_id;
 
+        Message_t drive_enable_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&drive_ss_ao, &drive_enable_msg);
+
         SetNextState(STATE_PICKUP, STATE_PICKUP_CALIBRATE);
     }
 }
 
 static void HandlePickupState(Message_t *msg)
 {
-    UNUSED(msg);
-
     if (STATE_PICKUP_CALIBRATE == sub_state)
     {
         if (SM_CALIBRATE_DONE == msg->id)
