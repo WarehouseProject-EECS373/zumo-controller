@@ -75,23 +75,27 @@ typedef struct UartLargePacketMessage_s
 #define UART_SMALL_PACKET_MSG_ID 0x81
 #define UART_LARGE_PACKET_MSG_ID 0x82
 
+
+// main state machine
+#define SM_END_IDLE_MSG_ID  0x100
+
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
 //*****************************************************************/
 
 // message queue sizes
-#define HEARTBEAT_QUEUE_SIZE    1
-#define DRIVE_SS_QUEUE_SIZE     16
-#define REFARR_SS_QUEUE_SIZE    8
-#define INPUT_CTL_SS_QUEUE_SIZE 8
-#define TEST_OBJ_QUEUE_SIZE     8
-#define COMMS_QUEUE_SIZE        8
-
+#define HEARTBEAT_QUEUE_SIZE     1
+#define DRIVE_SS_QUEUE_SIZE      8
+#define REFARR_SS_QUEUE_SIZE     8
+#define INPUT_CTL_SS_QUEUE_SIZE  4
+#define TEST_OBJ_QUEUE_SIZE      8
+#define COMMS_QUEUE_SIZE         8
+#define STATE_MACHINE_QUEUE_SIZE 16
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
-// ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
+ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 
 #endif

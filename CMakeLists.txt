@@ -28,6 +28,8 @@ set(PROJECT_SOURCES
     src/os_port_arm_m4.c
     src/rmk_hal_clock_cfg.c
     
+    src/state_controller.c
+
     src/subsys/drive_subsystem.c
     src/subsys/input_ctl_subsystem.c
     src/subsys/reflectance_array_subsystem.c

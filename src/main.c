@@ -15,6 +15,8 @@
 #include "subsys/reflectance_array_subsystem.h"
 #include "subsys/comms_subsystem.h"
 
+#include "state_controller.h"
+
 #include "watchdog.h"
 
 //*****************************************************************/
@@ -35,6 +37,7 @@ ACTIVE_OBJECT_DECL(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(comms_ss_ao, COMMS_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -97,15 +100,17 @@ int main()
     Drive_Init();
     ITCTL_Init();
     Comms_Init();
+    
+    StateController_Init();
 
     // start subsystems
 
     // initialize all active objects
-    AO_INIT(watchdog_ao, 6, WatchdogEventHandler, HEARTBEAT_QUEUE_SIZE)
-    AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE)
-    AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE)
+    AO_INIT(watchdog_ao, 6, WatchdogEventHandler, HEARTBEAT_QUEUE_SIZE);
+    AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE);
+    AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE);
     AO_INIT(comms_ss_ao, 4, CommsEventHandler, COMMS_QUEUE_SIZE);
-
+    AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE);
     TimedEventSetup();
 
     // initialze kernel
