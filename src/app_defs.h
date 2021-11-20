@@ -43,6 +43,13 @@ typedef struct UartLargePacketMessage_s
     uint16_t mem_key;
 } UartLargePacketMessage_t;
 
+typedef struct DispatchMessage_s
+{
+    Message_t base;
+    uint8_t bay_id;
+    uint8_t aisle_id;
+} DispatchMessage_t;
+
 //*****************************************************************/
 // MESSAGE IDs
 //*****************************************************************/
@@ -77,7 +84,9 @@ typedef struct UartLargePacketMessage_s
 
 
 // main state machine
-#define SM_END_IDLE_MSG_ID  0x100
+#define SM_PERIODIC_EVENT_MSG_ID        0x100
+
+#define SM_DISPATCH_FROM_IDLE_MSG_ID    0x110
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
