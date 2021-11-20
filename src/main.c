@@ -38,6 +38,7 @@ ACTIVE_OBJECT_DECL(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -98,6 +99,7 @@ int main()
 
     // initialize subsystems
     Drive_Init();
+    REFARR_Init();
     ITCTL_Init();
     Comms_Init();
     
@@ -111,6 +113,8 @@ int main()
     AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE);
     AO_INIT(comms_ss_ao, 4, CommsEventHandler, COMMS_QUEUE_SIZE);
     AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE);
+    AO_INIT(refarr_ss_ao, 1, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE);
+
     TimedEventSetup();
 
     // initialze kernel

@@ -10,7 +10,19 @@
 
 #define UART_TX_TIMEOUT 10
 
-#define UART_RX_BUFFER_SIZE 8
+#define UART_RX_BUFFER_SIZE 3
+
+#define MESSAGE_ID_IDX      0
+#define AISLE_ID_IDX        1
+#define BAY_ID_IDX          2
+
+#define MSG_DISPATCH_ID     0x1
+
+
+// NOTE: if we need a unique ID for each zumo
+// have the warehouse controller assign IDs in
+// the very beginning by sending some message
+// instead of hardcoding it in source.
 
 UART_HandleTypeDef uart_handle;
 
@@ -20,6 +32,7 @@ static volatile uint32_t rx_buffer_count = 0;
 static void ProcessSmallMessage(UartSmallPacketMessage_t* msg);
 static void ProcessLargeMessage(UartLargePacketMessage_t* msg);
 static void SendMessage(void* buffer, uint16_t length);
+static void UnpackMessage();
 
 __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 {
@@ -28,8 +41,12 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
     if(__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
     {
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
-        if(UART_RX_BUFFER_SIZE == rx_buffer_count)
+        if(UART_RX_BUFFER_SIZE <= rx_buffer_count)
         {
+            DISABLE_INTERRUPTS();
+            UnpackMessage();
+            ENABLE_INTERRUPTS();
+
             rx_buffer_count = 0;
         }
     }
@@ -38,6 +55,21 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 
     OS_ISR_EXIT();
 }
+
+static void UnpackMessage()
+{
+    if (MSG_DISPATCH_ID == rx_buffer[0])
+    {
+        DispatchMessage_t dmsg;
+        dmsg.base.id = SM_DISPATCH_FROM_IDLE_MSG_ID;
+        dmsg.base.msg_size = sizeof(DispatchMessage_t);
+        dmsg.aisle_id = rx_buffer[AISLE_ID_IDX];
+        dmsg.bay_id = rx_buffer[BAY_ID_IDX];
+
+        MsgQueuePut(&state_ctl_ao, &dmsg);
+    }
+}
+
 
 extern void Comms_Init()
 {

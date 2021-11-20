@@ -60,6 +60,7 @@ static void HandleIdleState(Message_t *msg)
 {
     if(SM_PERIODIC_EVENT_MSG_ID == msg->id)
     {
+        // nothing to do for periodic event while in IDLE state
     }
     else if (SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
     {
@@ -69,7 +70,7 @@ static void HandleIdleState(Message_t *msg)
         destination_aisle_id = dmsg->aisle_id;
 
         SetNextState(STATE_PICKUP, STATE_PICKUP_CALIBRATE);
-    }   
+    }
 }
 
 static void HandlePickupState(Message_t *msg)
@@ -78,6 +79,10 @@ static void HandlePickupState(Message_t *msg)
 
     if (STATE_PICKUP_CALIBRATE == sub_state)
     {
+        if (SM_CALIBRATE_DONE == msg->id)
+        {
+            SetNextState(STATE_PICKUP, STATE_PICKUP_DRIVE);
+        }
     }
     else if (STATE_PICKUP_DRIVE == sub_state)
     {

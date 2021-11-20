@@ -23,6 +23,14 @@ typedef struct DriveSetpointMessage_s
     uint32_t drive_mode;
 } DriveSetpointMessage_t;
 
+typedef struct DriveTimedTurn_s
+{
+    Message_t base;
+    ActiveObject_t *response;
+    uint16_t time;
+    uint8_t direction;
+} DriveTimedTurn_t;
+
 typedef struct DriveBaseVelocityMessage_s
 {
     Message_t base;
@@ -68,13 +76,19 @@ typedef struct DispatchMessage_s
 #define DRIVE_SETPOINT_MSG_ID            0x15
 #define DRIVE_TOGGLE_MSG_ID              0x16
 #define DRIVE_RAMP_TEST_ITERATION_MSG_ID 0x17
+#define DRIVE_TIMED_TURN_MSG_ID          0x18
+#define DRIVE_TIMED_TURN_DONE_MSG_ID     0x19
+
+#define DRIVE_TURN_DIR_LEFT   0
+#define DRIVE_TURN_DIR_RIGHT  1
 
 // reflectance array
-#define REFARR_CALIBRATE_MSG_ID  0x30
-#define REFARR_ON_MSG_ID         0x31
-#define REFARR_OFF_MSG_ID        0x32
-#define REFARR_START_READ_MSG_ID 0x33
-#define REFARR_STOP_READ_MSG_ID  0x34
+#define REFARR_CALIBRATE_MSG_ID         0x30
+#define REFARR_ON_MSG_ID                0x32
+#define REFARR_OFF_MSG_ID               0x33
+#define REFARR_START_READ_MSG_ID        0x34
+#define REFARR_STOP_READ_MSG_ID         0x35
+#define REFARR_PERIODIC_EVENT_MSG_ID    0x36
 
 #define PUSH_BUTTON_PRESSED_MSG_ID 0x61
 
@@ -87,6 +101,7 @@ typedef struct DispatchMessage_s
 #define SM_PERIODIC_EVENT_MSG_ID        0x100
 
 #define SM_DISPATCH_FROM_IDLE_MSG_ID    0x110
+#define SM_CALIBRATE_DONE               0x120
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
@@ -106,5 +121,6 @@ ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
+ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 
 #endif
