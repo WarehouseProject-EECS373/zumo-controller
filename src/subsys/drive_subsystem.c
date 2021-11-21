@@ -37,9 +37,10 @@
 #define DRIVE_STATE_DISABLED 0
 #define DRIVE_STATE_ENABLED  1
 
-// drive modes for PID controller
-#define DRIVE_MODE_DRIVE  0
-#define DRIVE_MODE_ROTATE 1
+// drive modes
+#define DRIVE_MODE_DRIVE        0x0
+#define DRIVE_MODE_ROTATE       0x1
+#define DRIVE_MODE_CALIBRATE    0x2
 
 // change to fix hardware orientation (e.g. motor installed backwards)
 #define LEFT_MOTOR_ORIENTATION  1
@@ -70,12 +71,16 @@ static float last_time = 0.0;
 static float i_accumulator = 0.0;
 
 // drive subsystem state
-static uint32_t state = DRIVE_STATE_ENABLED;
+static uint32_t state = DRIVE_STATE_DISABLED;
 static uint32_t drive_mode = DRIVE_MODE_DRIVE;
 
 // PWM timer
 static TIM_HandleTypeDef motor_pwm_right;
 static TIM_HandleTypeDef motor_pwm_left;
+
+static TimedEventSimple_t current_timed_event_loopback;
+static TimedEventSimple_t current_timed_event_response;
+static Message_t current_timed_event_msg;
 
 void HandleDriveLineSetpoint(DriveControlMessage_t* msg);
 void HandleTimedActivity(Message_t* msg);
@@ -270,37 +275,63 @@ void ToggleDriveState()
 
 extern void DriveEventHandler(Message_t* msg)
 {
-    if(msg->id == DRIVE_TOGGLE_MSG_ID)
+    if (DRIVE_TOGGLE_MSG_ID == msg->id)
     {
         ToggleDriveState();
     }
-    else if(msg->id == DRIVE_ENABLE_MSG_ID)
+    else if (DRIVE_ENABLE_MSG_ID == msg->id)
     {
         SetDriveState(DRIVE_STATE_ENABLED);
     }
-    else if(msg->id == DRIVE_DISABLE_MSG_ID)
+    else if (DRIVE_DISABLE_MSG_ID == msg->id)
     {
         SetDriveState(DRIVE_STATE_DISABLED);
     }
-    else if(msg->id == DRIVE_CTL_IN_MSG_ID)
+    else if (DRIVE_CTL_IN_MSG_ID == msg->id)
     {
         actual = ((DriveControlMessage_t*)msg)->actual;
     }
-    else if(msg->id == DRIVE_TIMED_ACTIVITY_MSG_ID)
+    else if (DRIVE_TIMED_ACTIVITY_MSG_ID == msg->id)
     {
         HandleTimedActivity(msg);
     }
-    else if(msg->id == DRIVE_BASE_VELOCITY_MSG_ID)
+    else if (DRIVE_BASE_VELOCITY_MSG_ID == msg->id)
     {
         base_output_percent = ((DriveBaseVelocityMessage_t*)msg)->base_velocity;
     }
-    else if(msg->id == DRIVE_SETPOINT_MSG_ID)
+    else if (DRIVE_SETPOINT_MSG_ID == msg->id)
     {
         HandleSetpointChange((DriveSetpointMessage_t*)msg);
     }
-    else if(msg->id == DRIVE_RAMP_TEST_ITERATION_MSG_ID)
+    else if (DRIVE_RAMP_TEST_ITERATION_MSG_ID == msg->id)
     {
         RampTestIteration();
+    }
+    else if (DRIVE_TIMED_TURN_MSG_ID == msg->id)
+    {
+        DriveTimedTurn_t *ttmsg = (DriveTimedTurn_t*)msg;
+
+        current_timed_event_msg.id = DRIVE_TIMED_TURN_DONE_MSG_ID;
+        current_timed_event_msg.msg_size = sizeof(Message_t);
+
+        TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+        TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+
+        SchedulerAddTimedEvent(&current_timed_event_loopback);
+        SchedulerAddTimedEvent(&current_timed_event_response);
+        
+        if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
+        {
+            SetOutoutPercent(-0.1, 0.1);
+        }
+        else
+        {
+            SetOutoutPercent(0.1, -0.1);
+        }
+    }
+    else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
+    {
+        SetOutoutPercent(0.0, 0.0);
     }
 }
 
