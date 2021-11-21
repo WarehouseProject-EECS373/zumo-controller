@@ -17,6 +17,9 @@
 #define BAY_ID_IDX          2
 
 #define MSG_DISPATCH_ID     0x1
+#define MSG_DEBUG_ID        0x2
+#define MSG_DEBUG_SIZE      8
+#define DEBUG_MSG_END_CHAR  0x5A
 
 
 // NOTE: if we need a unique ID for each zumo
@@ -101,7 +104,7 @@ extern void Comms_Init()
 
 extern void CommsEventHandler(Message_t* msg)
 {
-    if(UART_SMALL_PACKET_MSG_ID == msg->id)
+    if(UART_SMALL_PACKET_MSG_ID == msg->id || OS_DEBUG_MSG_ID == msg->id)
     {
         ProcessSmallMessage((UartSmallPacketMessage_t*)msg);
     }
@@ -127,3 +130,30 @@ static void SendMessage(void* buffer, uint16_t length)
 {
     HAL_UART_Transmit(&uart_handle, (uint8_t*)buffer, length, UART_TX_TIMEOUT);
 }
+
+#ifdef DEBUG_MODE_ENABLED
+extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue)
+{
+    if (OS_DEBUG_MSG_ID == msg_id)
+    {
+        return;
+    }
+
+    UartSmallPacketMessage_t debug_msg;
+
+    debug_msg.base.id = OS_DEBUG_MSG_ID;
+    debug_msg.base.msg_size = sizeof(UartSmallPacketMessage_t);
+    debug_msg.length = MSG_DEBUG_SIZE;
+
+    debug_msg.payload[0] = MSG_DEBUG_ID;
+    debug_msg.payload[1] = ao_id;
+    debug_msg.payload[2] = is_queue;
+    
+    uint32_t *id_start = (uint32_t*)(debug_msg.payload + 3);
+    *id_start = msg_id;
+
+    debug_msg.payload[7] = DEBUG_MSG_END_CHAR;
+    
+    MsgQueuePut(&comms_ss_ao, &debug_msg);
+}
+#endif

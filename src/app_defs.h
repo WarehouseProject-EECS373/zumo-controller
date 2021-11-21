@@ -95,7 +95,7 @@ typedef struct DispatchMessage_s
 // comms subsystem
 #define UART_SMALL_PACKET_MSG_ID 0x81
 #define UART_LARGE_PACKET_MSG_ID 0x82
-
+#define OS_DEBUG_MSG_ID          0x83
 
 // main state machine
 #define SM_PERIODIC_EVENT_MSG_ID        0x100
@@ -115,6 +115,14 @@ typedef struct DispatchMessage_s
 #define TEST_OBJ_QUEUE_SIZE      8
 #define COMMS_QUEUE_SIZE         8
 #define STATE_MACHINE_QUEUE_SIZE 16
+
+#define WATCHDOG_AO_ID      0x0
+#define DRIVE_AO_ID         0x1
+#define INPUT_CTL_AO_ID     0x2
+#define COMMS_AO_ID         0x3
+#define STATE_AO_ID         0x4
+#define REFARR_AO_ID        0x5
+
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)

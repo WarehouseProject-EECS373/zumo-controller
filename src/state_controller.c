@@ -72,6 +72,9 @@ static void HandleIdleState(Message_t *msg)
         Message_t drive_enable_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
         MsgQueuePut(&drive_ss_ao, &drive_enable_msg);
 
+        Message_t calibrate_msg = {.id = REFARR_CALIBRATE_MSG_ID, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&refarr_ss_ao, &calibrate_msg);
+
         SetNextState(STATE_PICKUP, STATE_PICKUP_CALIBRATE);
     }
 }

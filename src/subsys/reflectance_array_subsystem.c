@@ -28,7 +28,7 @@ static void HandleTimedTurnDoneMsg()
     if (STATE_CALIBRATE_LEFT_TURN == calibration_state)
     {
         DriveTimedTurn_t ttmsg;
-        ttmsg.base.id = DRIVE_TIMED_ACTIVITY_MSG_ID;
+        ttmsg.base.id = DRIVE_TIMED_TURN_MSG_ID;
         ttmsg.base.msg_size = sizeof(DriveTimedTurn_t);
         ttmsg.direction = DRIVE_TURN_DIR_RIGHT;
         ttmsg.response = &refarr_ss_ao;
@@ -40,7 +40,7 @@ static void HandleTimedTurnDoneMsg()
     else if (STATE_CALIBRATE_RIGHT_TURN == calibration_state)
     {
         DriveTimedTurn_t ttmsg;
-        ttmsg.base.id = DRIVE_TIMED_ACTIVITY_MSG_ID;
+        ttmsg.base.id = DRIVE_TIMED_TURN_MSG_ID;
         ttmsg.base.msg_size = sizeof(DriveTimedTurn_t);
         ttmsg.direction = DRIVE_TURN_DIR_LEFT;
         ttmsg.response = &refarr_ss_ao;
@@ -51,9 +51,6 @@ static void HandleTimedTurnDoneMsg()
     }
     else if (STATE_CALIBRATE_RETURN == calibration_state)
     {
-        Message_t done_msg = {.id = SM_CALIBRATE_DONE, .msg_size = sizeof(Message_t)};
-        MsgQueuePut(&state_ctl_ao, &done_msg);
-
         state = STATE_FUNCTIONAL;
     }
 }

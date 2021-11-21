@@ -98,18 +98,23 @@ int main()
     // start subsystems
 
     // initialize all active objects
-    AO_INIT(watchdog_ao, 6, WatchdogEventHandler, HEARTBEAT_QUEUE_SIZE);
-    AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE);
-    AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE);
-    AO_INIT(comms_ss_ao, 4, CommsEventHandler, COMMS_QUEUE_SIZE);
-    AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE);
-    AO_INIT(refarr_ss_ao, 1, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE);
+    AO_INIT(watchdog_ao, 6, WatchdogEventHandler, HEARTBEAT_QUEUE_SIZE, WATCHDOG_AO_ID);
+    AO_INIT(drive_ss_ao, 2, DriveEventHandler, DRIVE_SS_QUEUE_SIZE, DRIVE_AO_ID);
+    AO_INIT(input_ctl_ss_ao, 3, InputEventHandler, INPUT_CTL_SS_QUEUE_SIZE, INPUT_CTL_AO_ID);
+    AO_INIT(comms_ss_ao, 4, CommsEventHandler, COMMS_QUEUE_SIZE, COMMS_AO_ID);
+    AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE, STATE_AO_ID);
+    AO_INIT(refarr_ss_ao, 1, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE, REFARR_AO_ID);
 
     TimedEventSetup();
 
     // initialze kernel
     OSCallbacksCfg_t os_callback_cfg = {
-        .on_Idle = NULL, .on_Init = OnKernelInit, .on_SysTick = NULL};
+        .on_Idle = NULL, .on_Init = OnKernelInit, .on_SysTick = NULL, .on_DebugPrint = NULL};
+
+#ifdef DEBUG_MODE_ENABLED
+    os_callback_cfg.on_DebugPrint = DebugPrint;
+#endif
+
     KernelInit(&os, &os_callback_cfg);
 
     // enable interrupts again

@@ -12,6 +12,10 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_definitions(-DSTM32F401xE)
 
+if(DEBUG_MODE_ENABLED)
+    add_definitions(-DDEBUG_MODE_ENABLED)
+endif()
+
 stm32_fetch_cmsis(F4)
 stm32_fetch_hal(F4)
 
