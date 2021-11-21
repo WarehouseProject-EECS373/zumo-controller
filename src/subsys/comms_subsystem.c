@@ -12,11 +12,15 @@
 
 #define UART_RX_BUFFER_SIZE 3
 
+// byte indexes in buffer
 #define MESSAGE_ID_IDX      0
 #define AISLE_ID_IDX        1
 #define BAY_ID_IDX          2
 
+// incoming message from warehouse for dispatch
 #define MSG_DISPATCH_ID     0x1
+
+// debug message configuration
 #define MSG_DEBUG_ID        0x2
 #define MSG_DEBUG_SIZE      8
 #define DEBUG_MSG_END_CHAR  0x5A
@@ -41,11 +45,16 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 {
     OS_ISR_ENTER();
 
+    // if RX buffer Not Empty (RXNE)
     if(__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
     {
+        // add byte in UART data register to rx buffer
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
+
+        // all incoming packets need to have exactly 8B
         if(UART_RX_BUFFER_SIZE <= rx_buffer_count)
         {
+            // don't fill or modify buffer while unpacking it
             DISABLE_INTERRUPTS();
             UnpackMessage();
             ENABLE_INTERRUPTS();
@@ -63,6 +72,7 @@ static void UnpackMessage()
 {
     if (MSG_DISPATCH_ID == rx_buffer[MESSAGE_ID_IDX])
     {
+        // create dispatch message, send to state controller
         DispatchMessage_t dmsg;
         dmsg.base.id = SM_DISPATCH_FROM_IDLE_MSG_ID;
         dmsg.base.msg_size = sizeof(DispatchMessage_t);
@@ -134,6 +144,7 @@ static void SendMessage(void* buffer, uint16_t length)
 #ifdef DEBUG_MODE_ENABLED
 extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue)
 {
+    // don't log debug messages (will create an infinite loop)
     if (OS_DEBUG_MSG_ID == msg_id)
     {
         return;
@@ -141,6 +152,7 @@ extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue)
 
     UartSmallPacketMessage_t debug_msg;
 
+    // create and send debug message packet to comms event handler
     debug_msg.base.id = OS_DEBUG_MSG_ID;
     debug_msg.base.msg_size = sizeof(UartSmallPacketMessage_t);
     debug_msg.length = MSG_DEBUG_SIZE;

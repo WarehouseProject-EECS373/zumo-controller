@@ -309,28 +309,39 @@ extern void DriveEventHandler(Message_t* msg)
     }
     else if (DRIVE_TIMED_TURN_MSG_ID == msg->id)
     {
+        // for timed turn, create two single shot timed events
+        // send to 
+        // - requesting AO
+        // - drive event handler (to stop turn)
+
         DriveTimedTurn_t *ttmsg = (DriveTimedTurn_t*)msg;
 
         current_timed_event_msg.id = DRIVE_TIMED_TURN_DONE_MSG_ID;
         current_timed_event_msg.msg_size = sizeof(Message_t);
 
+        // create timed events
         TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
         TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
 
+        // schedule timed events
         SchedulerAddTimedEvent(&current_timed_event_loopback);
         SchedulerAddTimedEvent(&current_timed_event_response);
         
+        // start drive
         if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
         {
+            // TODO: make turn speed configurable
             SetOutoutPercent(-0.1, 0.1);
         }
         else
         {
+            // TODO: make turn speed configurable
             SetOutoutPercent(0.1, -0.1);
         }
     }
     else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
     {
+        // stop drive system when timed event done
         SetOutoutPercent(0.0, 0.0);
     }
 }
