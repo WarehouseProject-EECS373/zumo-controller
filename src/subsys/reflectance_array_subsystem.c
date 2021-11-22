@@ -91,6 +91,10 @@ static void HandleTimedTurnDoneMsg()
     else if (STATE_CALIBRATE_RETURN == calibration_state)
     {
         // TODO: stop taking repeated calibration measurements of sensors
+
+        Message_t cd_msg = {.id = SM_CALIBRATE_DONE, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&state_ctl_ao, &cd_msg);
+
         state = STATE_FUNCTIONAL;
     }
 }
@@ -99,10 +103,13 @@ static void HandlePeriodicEvent()
 {
     if (STATE_LINE_FOLLOWING == state)
     {
-        if (intersection_count_current >= intersection_count_target)
+        if (intersection_count_current > intersection_count_target)
         {
             Message_t ich_msg = {.id = REFARR_INTERSECTION_COUNT_HIT, .msg_size = sizeof(Message_t)};
             MsgQueuePut(line_follow_done_response, &ich_msg);
+
+            StopLineFollow();
+
         }
         // TODO: take measurements
         // TODO: get new actual position and send to drive

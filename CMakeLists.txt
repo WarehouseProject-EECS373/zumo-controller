@@ -9,10 +9,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
+set(DEBUG_MODE 1)
 
 add_definitions(-DSTM32F401xE)
 
-if(DEBUG_MODE_ENABLED)
+if(DEBUG_MODE)
+    message("Building with debug mode enabled")
     add_definitions(-DDEBUG_MODE_ENABLED)
 endif()
 

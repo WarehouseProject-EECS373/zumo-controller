@@ -14,9 +14,6 @@ build :
 debug :
 	cmake -DCMAKE_MODULE_PATH=../modules/stm32-cmake/cmake -DCMAKE_TOOLCHAIN_FILE=../modules/stm32-cmake/cmake/gcc_stm32.cmake -DCMAKE_BUILD_TYPE=Debug -Bdebug && $(MAKE) -C debug
 
-debug_with_trace :
-	cmake -DDEBUG_MODE_ENABLED=1 -DCMAKE_MODULE_PATH=../modules/stm32-cmake/cmake -DCMAKE_TOOLCHAIN_FILE=../modules/stm32-cmake/cmake/gcc_stm32.cmake -DCMAKE_BUILD_TYPE=Debug -Bdebug && $(MAKE) -C debug
-
 flash :
 	st-flash write debug/zumo-controller.bin 0x08000000
 	st-flash reset
