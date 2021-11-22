@@ -99,7 +99,7 @@ typedef struct LineFollowMessage_s
 #define DRIVE_TIMED_TURN_MSG_ID          0x18
 #define DRIVE_TIMED_TURN_DONE_MSG_ID     0x19
 #define DRIVE_OPEN_LOOP_MSG_ID           0x20
-
+#define DRIVE_PERIODIC_EVENT_MSG_ID      0x21
 
 #define DRIVE_TURN_DIR_LEFT   0
 #define DRIVE_TURN_DIR_RIGHT  1

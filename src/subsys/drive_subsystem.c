@@ -33,6 +33,8 @@
 #define PWM_FREQ      (SystemCoreClock / ((PRESCALER) + 1))
 #define DUTY_PULSE(x) ((uint32_t)((x) * (PERIOD))) // [0.0, 1.0] mapped to [0, PERIOD]
 
+#define DRIVE_CONTROL_LOOP_PERIOD 10
+
 // drive subsystem states
 #define DRIVE_STATE_DISABLED 0
 #define DRIVE_STATE_ENABLED  1
@@ -77,6 +79,9 @@ static uint32_t drive_mode = DRIVE_MODE_OPEN_LOOP;
 // PWM timer
 static TIM_HandleTypeDef motor_pwm_right;
 static TIM_HandleTypeDef motor_pwm_left;
+
+static TimedEventSimple_t drive_control_loop_periodic_event;
+static Message_t drive_control_loop_periodic_msg = {.id = DRIVE_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)};
 
 static TimedEventSimple_t current_timed_event_loopback;
 static TimedEventSimple_t current_timed_event_response;
@@ -235,6 +240,12 @@ static void HandleSetpointChange(DriveSetpointMessage_t* msg)
 {
     setpoint = msg->setpoint;
     drive_mode = DRIVE_MODE_CLOSED_LOOP;
+
+    if (!drive_control_loop_periodic_event.active)
+    {
+        TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao, &drive_control_loop_periodic_msg, DRIVE_CONTROL_LOOP_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+        SchedulerAddTimedEvent(&drive_control_loop_periodic_event);
+    }
 }
 
 /**
@@ -320,7 +331,7 @@ extern void DriveEventHandler(Message_t* msg)
     {
         actual = ((DriveControlMessage_t*)msg)->actual;
     }
-    else if (DRIVE_TIMED_ACTIVITY_MSG_ID == msg->id)
+    else if (DRIVE_TIMED_ACTIVITY_MSG_ID == msg->id || DRIVE_PERIODIC_EVENT_MSG_ID == msg->id)
     {
         HandleTimedActivity(msg);
     }
@@ -350,6 +361,7 @@ extern void DriveEventHandler(Message_t* msg)
         DriveOpenLoopControlMessage_t *cmsg = (DriveOpenLoopControlMessage_t*)msg;
 
         drive_mode = DRIVE_MODE_OPEN_LOOP;
+        TimedEventDisable(&drive_control_loop_periodic_event);
         SetOutoutPercent(cmsg->percent_left, cmsg->percent_right);
     }
 }
@@ -434,6 +446,7 @@ static void ConfigureTimer()
 
 extern void Drive_Init()
 {
+    drive_control_loop_periodic_event.active = false;
     ConfigureGPIO();
     ConfigureTimer();
 
