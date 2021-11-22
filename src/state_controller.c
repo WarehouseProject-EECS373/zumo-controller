@@ -133,15 +133,8 @@ static void HandleToBayState(Message_t *msg)
     {
         if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
         {
-            // FIXME: turn left instead of stopping
-            DriveOpenLoopControlMessage_t olctl_msg;
-            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-            olctl_msg.percent_left = 0.0;
-            olctl_msg.percent_right = 0.0;
+            // TODO: turn
             
-            MsgQueuePut(&drive_ss_ao, &olctl_msg);
-
             SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
         }
     }
@@ -159,23 +152,16 @@ static void HandleToBayState(Message_t *msg)
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
-            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_BAY_DRIVE);
         }
     }
     else if (STATE_TO_BAY_BAY_DRIVE == sub_state)
     {
         if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
         {
-            // FIXME: turn instead of stopping
-            DriveOpenLoopControlMessage_t olctl_msg;
-            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-            olctl_msg.percent_left = 0.0;
-            olctl_msg.percent_right = 0.0;
-            
-            MsgQueuePut(&drive_ss_ao, &olctl_msg);
+            // TODO: turn
 
-            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_BAY_TURN);
         }
     }
     else if (STATE_TO_BAY_BAY_TURN == sub_state)
@@ -245,13 +231,56 @@ static void HandleDropoffState(Message_t *msg)
             lf_msg.response = &state_ctl_ao;
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
+
+            SetNextState(STATE_IDLE_RETURN, STATE_IDLE_RETURN_EXIT_AISLE);
         }
     }
 }
 
 static void HandleReturnToIdleState(Message_t *msg)
 {
-    UNUSED(msg);
+    if (STATE_IDLE_RETURN_EXIT_AISLE == sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
+            // TODO: turn
+            
+            SetNextState(STATE_IDLE_RETURN, STATE_IDLE_RETURN_TURN);
+        }
+    }
+    else if (STATE_IDLE_RETURN_TURN == sub_state)
+    {
+        // FIXME: if msg id is turn complete
+        if (msg->id)
+        {
+            LineFollowMessage_t lf_msg;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.base_speed = 0.5;
+            lf_msg.intersection_count = 1;
+            lf_msg.response = &state_ctl_ao;
+            
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
+
+            SetNextState(STATE_IDLE_RETURN, STATE_BAY_DROPOFF_DRIVE);
+        }
+    }
+    else if (STATE_IDLE_RETURN_DRIVE == sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = 0.0;
+            olctl_msg.percent_right = 0.0;
+
+            MsgQueuePut(&drive_ss_ao, &olctl_msg);
+
+            SetNextState(STATE_IDLE, STATE_IDLE);
+
+        }
+    }
 }
 
 extern void StateController_Init()
