@@ -22,6 +22,12 @@
 // can go to gyro/magnetometer eventually if have time
 #define CALIBRATION_TIMED_TURN_DURATION 500
 
+
+#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  10
+
+static TimedEventSimple_t line_follow_periodic_event;
+static  Message_t line_follow_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
+
 // current states
 static uint32_t state = STATE_DISABLED;
 static uint32_t calibration_state = STATE_CALIBRATE_LEFT_TURN;
@@ -93,6 +99,7 @@ static void HandlePeriodicEvent()
 {
     if (STATE_LINE_FOLLOWING == state)
     {
+        // TODO: take measurements
         // TODO: get new actual position and send to drive
         // TODO: monitor intersection count and send message to state controller
     }
@@ -122,6 +129,10 @@ static void StartLineFollow(LineFollowMessage_t *msg)
 
     MsgQueuePut(&drive_ss_ao, &sp_msg);
     MsgQueuePut(&drive_ss_ao, &bv_msg);
+
+
+    TimedEventSimpleCreate(&line_follow_periodic_event, &refarr_ss_ao, &line_follow_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&line_follow_periodic_event);
 }
 
 static void StopLineFollow()
@@ -135,6 +146,7 @@ static void StopLineFollow()
     olctl_msg.percent_right = 0.0;
 
     MsgQueuePut(&drive_ss_ao, &olctl_msg);
+    TimedEventDisable(&line_follow_periodic_event);
 }
 
 extern void REFARR_Init()
