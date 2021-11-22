@@ -27,6 +27,12 @@
 
 static TimedEventSimple_t line_follow_periodic_event;
 static  Message_t line_follow_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
+static TIM_HandleTypeDef htim3;
+static TIM_HandleTypeDef htim4;
+static TIM_HandleTypeDef htim5;
+static GPIO_InitTypeDef gpioc = {0};
+static sensor_values[6];
+
 
 // current states
 static uint32_t state = STATE_DISABLED;
@@ -41,6 +47,80 @@ static void HandleStartCalibration();
 static void HandleTimedTurnDoneMsg();
 static void StartLineFollow(LineFollowMessage_t *msg);
 static void StopLineFollow();
+
+__attribute__((__interrupt__)) extern void TIM3_IRQHandler()
+{
+    OS_ISR_ENTER();
+    HAL_TIM_IRQHandler(&htim3);
+    OS_ISR_EXIT();
+}
+
+__attribute__((__interrupt__)) extern void TIM4_IRQHandler()
+{
+    OS_ISR_ENTER();
+    HAL_TIM_IRQHandler(&htim4);
+    OS_ISR_EXIT();
+}
+
+__attribute__((__interrupt__)) extern void TIM5_IRQHandler()
+{
+    OS_ISR_ENTER();
+    HAL_TIM_IRQHandler(&htim5);
+    OS_ISR_EXIT();
+}
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
+
+	  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1){
+		   TIM3->CR1 &= ~((uint32_t)1);
+		   TIM3->CNT = 0;
+		   gpioc.Mode = GPIO_MODE_INPUT;
+           HAL_GPIO_Init(GPIOC, &gpioc);
+		   HAL_TIM_IC_Start_IT(&htim4,TIM_CHANNEL_1);
+		   HAL_TIM_IC_Start_IT(&htim4,TIM_CHANNEL_2);
+		   HAL_TIM_IC_Start_IT(&htim4,TIM_CHANNEL_3);
+		   HAL_TIM_IC_Start_IT(&htim4,TIM_CHANNEL_4);
+		   HAL_TIM_IC_Start_IT(&htim5,TIM_CHANNEL_1);
+		   HAL_TIM_IC_Start_IT(&htim5,TIM_CHANNEL_2);
+		   TIM4->CR1 |= 1;
+		   TIM5->CR1 |= 1;
+      } 
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
+	if (htim->Instance == TIM4){
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1){
+			sensor_values[0] = htim->Instance->CCR1;
+		}
+		else if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2){
+			sensor_values[1] = htim->Instance->CCR2;
+		}
+		else if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3){
+			sensor_values[2] = htim->Instance->CCR3;
+		}
+		else {
+			sensor_values[3] = htim->Instance->CCR4;
+		}
+	}
+	else if (htim->Instance == TIM5){
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1){
+			sensor_values[4] = htim->Instance->CCR1;
+		}
+		else{
+			sensor_values[5] = htim->Instance->CCR2;
+		}
+	}
+	if (glob_count == 6){
+		TIM4->CR1 &= ~((uint32_t)1);
+		TIM5->CR1 &= ~((uint32_t)1);
+		TIM4->CNT = 0;
+		TIM5->CNT = 0;
+		glob_count = 0;
+		printf("* %d * %d * %d * %d * %d * %d *\r\n",sensor_values[0],sensor_values[1],
+																	sensor_values[2],sensor_values[3],
+																	sensor_values[4],sensor_values[5]);
+	}
+
 
 static void HandleStartCalibration()
 {
@@ -117,6 +197,22 @@ static void HandlePeriodicEvent()
     }
 }
 
+static void start_read_sequence(char port, GPIO_InitTypeDef* gpio){
+	//initialize read buffer
+    uint16_t read_buffer[6] = {3000,3000,3000,3000,3000,3000};
+    //Set GPIOs as output
+    gpioc.Mode = GPIO_MODE_OUTPUT_PP;
+	write_gpio(port, gpio->Pin);
+    HAL_GPIO_Init(GPIOC, &gpioc);
+    //write GPIOs
+    GPIOC->BSRR = gpioc.pin;
+    //start sensor read sequence
+    __HAL_TIM_ENABLE_IT(&htim3, TIM_IT_CC1);
+	TIM3->CR1 |= 1;
+}
+
+
+
 static void StartLineFollow(LineFollowMessage_t *msg)
 {
     state = STATE_LINE_FOLLOWING;
@@ -163,7 +259,139 @@ static void StopLineFollow()
 
 extern void REFARR_Init()
 {
+    //init gpios
+gpioc.Pull = GPIO_NOPULL;
+gpioc.Speed = GPIO_SPEED_FREQ_LOW;
+gpioc.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                                  |GPIO_PIN_4|GPIO_PIN_5;
+    //init compare timer
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 15;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  
+  TIM3->CCR1 = delay1;
+    
+//capture timers init
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
+
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 15;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+//timer5
+
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 15;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
 }
+
 
 
 extern void ReflectanceArrayEventHandler(Message_t* msg)
