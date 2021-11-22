@@ -72,7 +72,7 @@ static float i_accumulator = 0.0;
 
 // drive subsystem state
 static uint32_t state = DRIVE_STATE_DISABLED;
-static uint32_t drive_mode = DRIVE_MODE_DRIVE;
+static uint32_t drive_mode = DRIVE_MODE_OPEN_LOOP;
 
 // PWM timer
 static TIM_HandleTypeDef motor_pwm_right;
@@ -82,23 +82,24 @@ static TimedEventSimple_t current_timed_event_loopback;
 static TimedEventSimple_t current_timed_event_response;
 static Message_t current_timed_event_msg;
 
-void HandleDriveLineSetpoint(DriveControlMessage_t* msg);
-void HandleTimedActivity(Message_t* msg);
-void HandleSetpointChange(DriveSetpointMessage_t* msg);
 
-void SetOutoutPercent(float left_percent_output, float right_percent_output);
-void SetDriveState(uint32_t new_state);
-void ToggleDriveState();
+static void HandleStartTimedTurn(DriveTimedTurn_t* msg);
+static void HandleTimedActivity(Message_t* msg);
+static void HandleSetpointChange(DriveSetpointMessage_t* msg);
 
-void RampTestIteration();
+static void SetOutoutPercent(float left_percent_output, float right_percent_output);
+static void SetDriveState(uint32_t new_state);
+static void ToggleDriveState();
 
-float ApplyDriveDeadband(float value);
-float BoundDrivePercent(float percent_output);
+static void RampTestIteration();
 
-void ClearPIDState();
+static float ApplyDriveDeadband(float value);
+static float BoundDrivePercent(float percent_output);
 
-void ConfigureGPIO();
-void ConfigureTimer();
+static void ClearPIDState();
+
+static void ConfigureGPIO();
+static void ConfigureTimer();
 
 /**
  * @brief bounds desired output percent between -1.0 and 1.0
@@ -106,7 +107,7 @@ void ConfigureTimer();
  * @param output
  * @return float
  */
-float BoundDrivePercent(float output)
+static float BoundDrivePercent(float output)
 {
     if(output > MAX_DRIVE_PERCENT)
     {
@@ -129,7 +130,7 @@ float BoundDrivePercent(float output)
  * @param value
  * @return float
  */
-float ApplyDriveDeadband(float value)
+static float ApplyDriveDeadband(float value)
 {
     // TODO: make generic to accept and target, not just 0.0
     if(value < DEADBAND && value > -1 * DEADBAND)
@@ -147,7 +148,7 @@ float ApplyDriveDeadband(float value)
  *
  * @param msg
  */
-void HandleTimedActivity(Message_t* msg)
+static void HandleTimedActivity(Message_t* msg)
 {
     UNUSED(msg);
 
@@ -178,7 +179,7 @@ void HandleTimedActivity(Message_t* msg)
  * @brief Test all combinations of motor speeds and directions
  *
  */
-void RampTestIteration()
+static void RampTestIteration()
 {
     static float left = MIN_DRIVE_PERCENT;
     static float right = MIN_DRIVE_PERCENT;
@@ -216,7 +217,7 @@ void RampTestIteration()
  * @brief reset PID controller
  *
  */
-void ClearPIDState()
+static void ClearPIDState()
 {
     setpoint = 0.0;
     actual = 0.0;
@@ -230,15 +231,10 @@ void ClearPIDState()
  *
  * @param msg
  */
-void HandleSetpointChange(DriveSetpointMessage_t* msg)
+static void HandleSetpointChange(DriveSetpointMessage_t* msg)
 {
-    if(msg->drive_mode != drive_mode)
-    {
-        ClearPIDState();
-        drive_mode = msg->drive_mode;
-    }
-
     setpoint = msg->setpoint;
+    drive_mode = DRIVE_MODE_CLOSED_LOOP;
 }
 
 /**
@@ -246,7 +242,7 @@ void HandleSetpointChange(DriveSetpointMessage_t* msg)
  *
  * @param new_state enabled or disabled
  */
-void SetDriveState(uint32_t new_state)
+static void SetDriveState(uint32_t new_state)
 {
     if(DRIVE_STATE_DISABLED == new_state)
     {
@@ -261,7 +257,7 @@ void SetDriveState(uint32_t new_state)
  * @brief Toggle drive state
  *
  */
-void ToggleDriveState()
+static void ToggleDriveState()
 {
     if(state == DRIVE_STATE_DISABLED)
     {
@@ -270,6 +266,39 @@ void ToggleDriveState()
     else
     {
         SetDriveState(DRIVE_STATE_DISABLED);
+    }
+}
+
+static void HandleStartTimedTurn(DriveTimedTurn_t* msg)
+{
+    // for timed turn, create two single shot timed events
+    // send to 
+    // - requesting AO
+    // - drive event handler (to stop turn)
+
+    DriveTimedTurn_t *ttmsg = (DriveTimedTurn_t*)msg;
+
+    current_timed_event_msg.id = DRIVE_TIMED_TURN_DONE_MSG_ID;
+    current_timed_event_msg.msg_size = sizeof(Message_t);
+
+    // create timed events
+    TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+    TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+
+        // schedule timed events
+    SchedulerAddTimedEvent(&current_timed_event_loopback);
+    SchedulerAddTimedEvent(&current_timed_event_response);
+        
+    // start drive
+    if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
+    {
+        // TODO: make turn speed configurable
+        SetOutoutPercent(-0.1, 0.1);
+    }
+    else
+    {
+        // TODO: make turn speed configurable
+        SetOutoutPercent(0.1, -0.1);
     }
 }
 
@@ -309,40 +338,19 @@ extern void DriveEventHandler(Message_t* msg)
     }
     else if (DRIVE_TIMED_TURN_MSG_ID == msg->id)
     {
-        // for timed turn, create two single shot timed events
-        // send to 
-        // - requesting AO
-        // - drive event handler (to stop turn)
-
-        DriveTimedTurn_t *ttmsg = (DriveTimedTurn_t*)msg;
-
-        current_timed_event_msg.id = DRIVE_TIMED_TURN_DONE_MSG_ID;
-        current_timed_event_msg.msg_size = sizeof(Message_t);
-
-        // create timed events
-        TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
-        TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
-
-        // schedule timed events
-        SchedulerAddTimedEvent(&current_timed_event_loopback);
-        SchedulerAddTimedEvent(&current_timed_event_response);
-        
-        // start drive
-        if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
-        {
-            // TODO: make turn speed configurable
-            SetOutoutPercent(-0.1, 0.1);
-        }
-        else
-        {
-            // TODO: make turn speed configurable
-            SetOutoutPercent(0.1, -0.1);
-        }
+        HandleStartTimedTurn((DriveTimedTurn_t*)msg);
     }
     else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
     {
         // stop drive system when timed event done
         SetOutoutPercent(0.0, 0.0);
+    }
+    else if (DRIVE_OPEN_LOOP_MSG_ID == msg->id)
+    {
+        DriveOpenLoopControlMessage_t *cmsg = (DriveOpenLoopControlMessage_t*)msg;
+
+        drive_mode = DRIVE_MODE_OPEN_LOOP;
+        SetOutoutPercent(cmsg->percent_left, cmsg->percent_right);
     }
 }
 
@@ -350,7 +358,7 @@ extern void DriveEventHandler(Message_t* msg)
  * @brief Configure all GPIOs used by the drive subsystem
  *
  */
-void ConfigureGPIO()
+static void ConfigureGPIO()
 {
     GPIO_InitTypeDef pwm_gpio_cfg = {0};
     GPIO_InitTypeDef dir_gpio_cfg = {0};
@@ -392,7 +400,7 @@ void ConfigureGPIO()
  * @brief Setup PWM timer
  *
  */
-void ConfigureTimer()
+static void ConfigureTimer()
 {
     motor_pwm_right.Instance = MOTOR_PWM_TIMER_RIGHT;
     motor_pwm_right.Init.Prescaler = PRESCALER;
@@ -438,7 +446,7 @@ extern void Drive_Init()
  * @param left_percent_output
  * @param right_percent_output
  */
-void SetOutoutPercent(float left_percent_output, float right_percent_output)
+static void SetOutoutPercent(float left_percent_output, float right_percent_output)
 {
     // don't set if drive isn't enabled
     if(state == DRIVE_STATE_DISABLED)

@@ -26,7 +26,6 @@
 #define HEARTBEAT_PERIOD               500
 #define IR_SENSOR_READ_PERIOD          3
 #define DRIVE_SS_TIMED_ACTIVITY_PERIOD 5
-#define COMMS_TEST_PERIOD              225
 
 //*****************************************************************/
 // Active Object Declarations and Configuration

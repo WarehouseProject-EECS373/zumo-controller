@@ -19,8 +19,6 @@
 #define STATE_PICKUP                        0x10
 #define STATE_PICKUP_CALIBRATE              0x11
 #define STATE_PICKUP_DRIVE                  0x12
-#define STATE_PICKUP_PICKUP                 0x13
-#define STATE_PICKUP_REVERSE                0x14
 
 // input to bay
 #define STATE_TO_BAY                        0x30
@@ -96,22 +94,37 @@ static void HandlePickupState(Message_t *msg)
     {
         if (SM_CALIBRATE_DONE == msg->id)
         {
-            // start drive to pickup action
+            // start line following at slower speed, speed up once box is picked up
+            LineFollowMessage_t line_msg;
+
+            line_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            line_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            line_msg.response = &state_ctl_ao;
+            line_msg.base_speed = 0.25;
+            line_msg.intersection_count = destination_aisle_id;
+
+            MsgQueuePut(&refarr_ss_ao, &line_msg);
+
+            // TODO: start electromagnet
+
             SetNextState(STATE_PICKUP, STATE_PICKUP_DRIVE);
         }
     }
     else if (STATE_PICKUP_DRIVE == sub_state)
     {
-        // TODO: drive until limit switch
-        // TODO: start electromagnet
-    }
-    else if (STATE_PICKUP_PICKUP == sub_state)
-    {
-        // TODO: start reverse
-    }
-    else if (STATE_PICKUP_REVERSE == sub_state)
-    {
-        // TODO: go to drive to bay state
+        if (FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID == msg->id)
+        {
+            // speed up after box pickup but don't stop line following yet
+            DriveBaseVelocityMessage_t bv_msg;
+            bv_msg.base.id = DRIVE_BASE_VELOCITY_MSG_ID;
+            bv_msg.base.msg_size = sizeof(DriveBaseVelocityMessage_t);
+            bv_msg.base_velocity = 0.5;
+
+            MsgQueuePut(&drive_ss_ao, &bv_msg);
+            
+            // enter drive to bay state once box is picked up
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_DRIVE);
+        }
     }
 }
 

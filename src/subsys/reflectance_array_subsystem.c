@@ -6,9 +6,11 @@
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
 
+// states for periodic event
 #define STATE_DISABLED       0x0
 #define STATE_CALIBRATE      0x1
 #define STATE_FUNCTIONAL     0x2
+#define STATE_LINE_FOLLOWING 0x3
 
 // calibration states
 #define STATE_CALIBRATE_LEFT_TURN   0x0
@@ -24,8 +26,33 @@
 static uint32_t state = STATE_DISABLED;
 static uint32_t calibration_state = STATE_CALIBRATE_LEFT_TURN;
 
+static uint16_t intersection_count_target = 0;
+static uint16_t intersection_count_current = 0;
+static ActiveObject_t* line_follow_done_response = NULL;
+
 static void HandlePeriodicEvent();
+static void HandleStartCalibration();
 static void HandleTimedTurnDoneMsg();
+static void StartLineFollow(LineFollowMessage_t *msg);
+static void StopLineFollow();
+
+static void HandleStartCalibration()
+{
+    state = STATE_CALIBRATE;
+        
+    // start calibration process with timed turn left
+    DriveTimedTurn_t ttmsg;
+    ttmsg.base.id = DRIVE_TIMED_TURN_MSG_ID;
+    ttmsg.base.msg_size = sizeof(DriveTimedTurn_t);
+    ttmsg.direction = DRIVE_TURN_DIR_LEFT;
+    ttmsg.time = CALIBRATION_TIMED_TURN_DURATION;
+    ttmsg.response = &refarr_ss_ao;
+
+    MsgQueuePut(&drive_ss_ao, &ttmsg);
+
+    calibration_state = STATE_CALIBRATE_LEFT_TURN;
+
+}
 
 static void HandleTimedTurnDoneMsg()
 {
@@ -64,7 +91,50 @@ static void HandleTimedTurnDoneMsg()
 
 static void HandlePeriodicEvent()
 {
-    // 
+    if (STATE_LINE_FOLLOWING == state)
+    {
+        // TODO: get new actual position and send to drive
+        // TODO: monitor intersection count and send message to state controller
+    }
+}
+
+static void StartLineFollow(LineFollowMessage_t *msg)
+{
+    state = STATE_LINE_FOLLOWING;
+
+    intersection_count_current = 0;
+    intersection_count_target = msg->intersection_count;
+    line_follow_done_response = msg->response;
+
+
+    // load "middle of the line" setpoint into drive subsystem
+    // drive control loop will use this setpoint when calculating
+    // error using the periodic actual position update from REFARR
+    DriveSetpointMessage_t sp_msg;
+    sp_msg.base.id = DRIVE_SETPOINT_MSG_ID;
+    sp_msg.base.msg_size = sizeof(DriveSetpointMessage_t);
+    sp_msg.setpoint = 0.0; // FIXME: what is middle of robot?
+
+    DriveBaseVelocityMessage_t bv_msg;
+    bv_msg.base.id = DRIVE_BASE_VELOCITY_MSG_ID;
+    bv_msg.base.msg_size = sizeof(DriveBaseVelocityMessage_t);
+    bv_msg.base_velocity = msg->base_speed;
+
+    MsgQueuePut(&drive_ss_ao, &sp_msg);
+    MsgQueuePut(&drive_ss_ao, &bv_msg);
+}
+
+static void StopLineFollow()
+{
+    state = STATE_FUNCTIONAL;
+
+    DriveOpenLoopControlMessage_t olctl_msg;
+    olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+    olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+    olctl_msg.percent_left = 0.0;
+    olctl_msg.percent_right = 0.0;
+
+    MsgQueuePut(&drive_ss_ao, &olctl_msg);
 }
 
 extern void REFARR_Init()
@@ -76,25 +146,19 @@ extern void ReflectanceArrayEventHandler(Message_t* msg)
 {
     if (msg->id == REFARR_CALIBRATE_MSG_ID)
     {
-        state = STATE_CALIBRATE;
-        
-        // start calibration process with timed turn left
-        DriveTimedTurn_t ttmsg;
-        ttmsg.base.id = DRIVE_TIMED_TURN_MSG_ID;
-        ttmsg.base.msg_size = sizeof(DriveTimedTurn_t);
-        ttmsg.direction = DRIVE_TURN_DIR_LEFT;
-        ttmsg.time = CALIBRATION_TIMED_TURN_DURATION;
-        ttmsg.response = &refarr_ss_ao;
-
-        MsgQueuePut(&drive_ss_ao, &ttmsg);
-
-        calibration_state = STATE_CALIBRATE_LEFT_TURN;
-
-        // TODO: start a periodic event to take repeated measurements while drive is turning
+        HandleStartCalibration();
     }
     else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
     {
         HandleTimedTurnDoneMsg();
+    }
+    else if (REFARR_START_LINE_FOLLOW_MSG_ID == msg->id)
+    {
+        StartLineFollow((LineFollowMessage_t*)msg);
+    }
+    else if (REFARR_STOP_LINE_FOLLOW_MSG_ID == msg->id)
+    {
+        StopLineFollow();
     }
     else if (REFARR_PERIODIC_EVENT_MSG_ID == msg->id)
     {
