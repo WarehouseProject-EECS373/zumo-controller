@@ -99,6 +99,11 @@ static void HandlePeriodicEvent()
 {
     if (STATE_LINE_FOLLOWING == state)
     {
+        if (intersection_count_current >= intersection_count_target)
+        {
+            Message_t ich_msg = {.id = REFARR_INTERSECTION_COUNT_HIT, .msg_size = sizeof(Message_t)};
+            MsgQueuePut(line_follow_done_response, &ich_msg);
+        }
         // TODO: take measurements
         // TODO: get new actual position and send to drive
         // TODO: monitor intersection count and send message to state controller

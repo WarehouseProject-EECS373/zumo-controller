@@ -22,15 +22,14 @@
 
 // input to bay
 #define STATE_TO_BAY                        0x30
-#define STATE_TO_BAY_FORWARD                0x31
+#define STATE_TO_BAY_AISLE_DRIVE            0x31
 #define STATE_TO_BAY_AISLE_TURN             0x32
-#define STATE_TO_BAY_AISLE_DRIVE            0x32
-#define STATE_TO_BAY_BAY_TURN               0x33
+#define STATE_TO_BAY_BAY_DRIVE              0x33
+#define STATE_TO_BAY_BAY_TURN               0x34
 
 // drop off box in bay
 #define STATE_BAY_DROPOFF                   0x50
 #define STATE_BAY_DROPOFF_DRIVE             0x51
-#define STATE_BAY_DROPOFF_RELEASE           0x52
 #define STATE_BAY_DROPOFF_REVERSE           0x53
 #define STATE_BAY_DROPOFF_TURN              0x54
 
@@ -95,15 +94,15 @@ static void HandlePickupState(Message_t *msg)
         if (SM_CALIBRATE_DONE == msg->id)
         {
             // start line following at slower speed, speed up once box is picked up
-            LineFollowMessage_t line_msg;
+            LineFollowMessage_t lf_msg;
 
-            line_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
-            line_msg.base.msg_size = sizeof(LineFollowMessage_t);
-            line_msg.response = &state_ctl_ao;
-            line_msg.base_speed = 0.25;
-            line_msg.intersection_count = destination_aisle_id;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.response = &state_ctl_ao;
+            lf_msg.base_speed = 0.25;
+            lf_msg.intersection_count = destination_aisle_id;
 
-            MsgQueuePut(&refarr_ss_ao, &line_msg);
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
             // TODO: start electromagnet
 
@@ -130,14 +129,124 @@ static void HandlePickupState(Message_t *msg)
 
 static void HandleToBayState(Message_t *msg)
 {
-    UNUSED(msg);
+    if (STATE_TO_BAY_AISLE_DRIVE == sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
+            // FIXME: turn left instead of stopping
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = 0.0;
+            olctl_msg.percent_right = 0.0;
+            
+            MsgQueuePut(&drive_ss_ao, &olctl_msg);
 
-    
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
+        }
+    }
+    else if (STATE_TO_BAY_AISLE_TURN == sub_state)
+    {
+        // FIXME: if msg id is turn complete
+        if (msg->id)
+        {
+            LineFollowMessage_t lf_msg;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.base_speed = 0.5;
+            lf_msg.intersection_count = destination_bay_id;
+            lf_msg.response = &state_ctl_ao;
+
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
+
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
+        }
+    }
+    else if (STATE_TO_BAY_BAY_DRIVE == sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
+            // FIXME: turn instead of stopping
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = 0.0;
+            olctl_msg.percent_right = 0.0;
+            
+            MsgQueuePut(&drive_ss_ao, &olctl_msg);
+
+            SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
+        }
+    }
+    else if (STATE_TO_BAY_BAY_TURN == sub_state)
+    {
+        // FIXME: if msg id is turn complete
+        if (msg->id)
+        {
+        
+            // drive forward until limit switch is hit
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = 0.4;
+            olctl_msg.percent_right = 0.4;
+
+            MsgQueuePut(&drive_ss_ao, &olctl_msg);
+
+            SetNextState(STATE_BAY_DROPOFF, STATE_BAY_DROPOFF_DRIVE);
+        }
+    }
 }
 
 static void HandleDropoffState(Message_t *msg)
 {
-    UNUSED(msg);
+    if (STATE_BAY_DROPOFF_DRIVE == sub_state)
+    {
+        if (FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID == msg->id)
+        {
+            // TODO: release electromagnet
+
+            // start reverse drive by following the line in reverse back to aisle
+            // center. then turn and drive forward to the end of the aisle
+            
+            LineFollowMessage_t lf_msg;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.base_speed = -0.5;
+            lf_msg.intersection_count = 1;
+            lf_msg.response = &state_ctl_ao;
+
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
+
+            SetNextState(STATE_BAY_DROPOFF, STATE_BAY_DROPOFF_REVERSE);
+        }
+    }
+    else if (STATE_BAY_DROPOFF_REVERSE == sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
+            // TODO: turn
+            
+            SetNextState(STATE_BAY_DROPOFF, STATE_BAY_DROPOFF_TURN);
+        }
+    }
+    else if (STATE_BAY_DROPOFF_TURN == sub_state)
+    {
+        // FIXME: if turn complete
+        if (msg->id)
+        {
+            // at this point the zumo is driving down the aisle to the aisle exit
+            // it will stop at the end of the aisle, turn, then restart line following
+            LineFollowMessage_t lf_msg;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.base_speed = -0.5;
+            lf_msg.intersection_count = 1;
+            lf_msg.response = &state_ctl_ao;
+
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
+        }
+    }
 }
 
 static void HandleReturnToIdleState(Message_t *msg)
