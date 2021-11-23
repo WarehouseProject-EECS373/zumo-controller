@@ -9,7 +9,7 @@ extern void Comms_Init();
 
 extern void CommsEventHandler(Message_t *msg);
 
-#ifdef DEBUG_MODE_ENABLED
+#ifdef OS_TRACE_ENABLED
 extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue);
 #endif
 

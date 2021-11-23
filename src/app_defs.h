@@ -72,8 +72,6 @@ typedef struct LineFollowMessage_s
     uint8_t intersection_count;
 } LineFollowMessage_t;
 
-
-
 //*****************************************************************/
 // MESSAGE IDs
 //*****************************************************************/
@@ -119,9 +117,12 @@ typedef struct LineFollowMessage_s
 #define FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID   0x62
 
 // comms subsystem
-#define UART_SMALL_PACKET_MSG_ID 0x81
-#define UART_LARGE_PACKET_MSG_ID 0x82
-#define OS_DEBUG_MSG_ID          0x83
+#define UART_SMALL_PACKET_MSG_ID    0x81
+#define UART_LARGE_PACKET_MSG_ID    0x82
+#define OS_DEBUG_MSG_ID             0x83
+#define DRIVE_CTL_TRACE_MSG_ID      0x84
+#define DRIVE_CTL_TRACE_INIT_MSG_ID 0x85
+#define LINE_FOLLOW_TRACE_MSG_ID    0x86
 
 // main state machine
 #define SM_PERIODIC_EVENT_MSG_ID        0x100

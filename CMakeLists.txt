@@ -9,13 +9,25 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
-set(DEBUG_MODE 1)
+set(OS_TRACE_ENABLED 0)
+set(LINE_FOLLOW_TRACE_ENABLED 1)
+set(DRIVE_CONTROL_LOOP_TRACE_ENABLED 1)
 
 add_definitions(-DSTM32F401xE)
 
-if(DEBUG_MODE)
-    message("Building with debug mode enabled")
-    add_definitions(-DDEBUG_MODE_ENABLED)
+if(OS_TRACE_ENABLED)
+    message("enabled OS_TRACE")
+    add_definitions(-DOS_TRACE_ENABLED)
+endif()
+
+if(LINE_FOLLOW_TRACE_ENABLED)
+    message("enabled LINE_FOLLOW_TRACE")
+    add_definitions(-DLINE_FOLLOW_TRACE_ENABLED)
+endif()
+
+if(DRIVE_CONTROL_LOOP_TRACE_ENABLED)
+    message("enabled DRIVE_CONTROL_LOOP_TRACE")
+    add_definitions(-DDRIVE_CTL_TRACE_ENABLED)
 endif()
 
 stm32_fetch_cmsis(F4)
@@ -31,6 +43,7 @@ set(PROJECT_SOURCES
     
     src/main.c
     src/watchdog.c
+    src/trace.c
     src/os_port_arm_m4.c
     src/rmk_hal_clock_cfg.c
     

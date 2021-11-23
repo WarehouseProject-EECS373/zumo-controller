@@ -6,6 +6,8 @@
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
 
+#include "trace.h"
+
 // pin configurations for drive
 
 #define MOTOR_PWM_TIMER_RIGHT TIM3
@@ -178,6 +180,10 @@ static void HandleTimedActivity(Message_t* msg)
 
     // save last time for next calculation
     last_time = current_time;
+
+#ifdef DRIVE_CTL_TRACE_ENABLED
+    ControlLoopTrace(left_output, right_output, error, actual);
+#endif
 }
 
 /**
@@ -246,6 +252,10 @@ static void HandleSetpointChange(DriveSetpointMessage_t* msg)
         TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao, &drive_control_loop_periodic_msg, DRIVE_CONTROL_LOOP_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
         SchedulerAddTimedEvent(&drive_control_loop_periodic_event);
     }
+
+#ifdef DRIVE_CTL_TRACE_ENABLED
+    ControlLoopTraceInit(setpoint);
+#endif
 }
 
 /**

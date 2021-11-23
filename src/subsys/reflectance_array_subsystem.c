@@ -6,6 +6,8 @@
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
 
+#include "trace.h"
+
 // states for periodic event
 #define STATE_DISABLED       0x0
 #define STATE_CALIBRATE      0x1
@@ -27,6 +29,9 @@
 
 static TimedEventSimple_t line_follow_periodic_event;
 static  Message_t line_follow_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
+
+
+static uint16_t sensor_values[6];
 
 // current states
 static uint32_t state = STATE_DISABLED;
@@ -111,6 +116,11 @@ static void HandlePeriodicEvent()
             StopLineFollow();
 
         }
+
+#ifdef LINE_FOLLOW_TRACE_ENABLED
+        LineFollowTrace(sensor_values);
+#endif
+
         // TODO: take measurements
         // TODO: get new actual position and send to drive
         // TODO: monitor intersection count and send message to state controller
