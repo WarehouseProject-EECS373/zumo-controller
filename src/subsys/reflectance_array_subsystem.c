@@ -119,6 +119,8 @@ static void HandlePeriodicEvent()
 
 #ifdef LINE_FOLLOW_TRACE_ENABLED
         LineFollowTrace(sensor_values);
+#else
+        UNUSED(sensor_values);
 #endif
 
         // TODO: take measurements
