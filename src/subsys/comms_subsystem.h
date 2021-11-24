@@ -2,6 +2,7 @@
 #define COMMS_SUBSYS_H
 
 #include <os.h>
+#include <stcp.h>
 
 #include "app_defs.h"
 

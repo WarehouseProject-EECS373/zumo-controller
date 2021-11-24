@@ -70,9 +70,11 @@ add_executable(${PROJECT_NAME}
 
 
 add_subdirectory(modules/rmkernel)
+add_subdirectory(modules/stcp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     rmkernel
+    stcp
 )
 
 
