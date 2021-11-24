@@ -193,6 +193,7 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_BASE_OUTPUT_ID        0x5
 #define DRIVE_STATE_ID              0x6
 #define DRIVE_SETPOINT_ID           0x7
+#define DRIVE_ACTUAL_ID             0x8
 
 
 //*****************************************************************/

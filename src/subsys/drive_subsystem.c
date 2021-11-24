@@ -60,12 +60,12 @@ static uint32_t drive_control_loop_period = 10;
 
 // position control PID constants
 static float kP = 1.0;
-static float kI = 2.0;
-static float kD = 3.0;
+static float kI = 0.0;
+static float kD = 0.0;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
-static float base_output_percent = 0.0;
+static float base_output_percent = 0.5;
 
 // position control
 static float setpoint = 0.0;
@@ -139,10 +139,17 @@ static void PropertyHandler(PropertyGetSetMessage_t *msg)
     else if (DRIVE_STATE_ID == msg->p_id)
     {
         GET_SET_PROPERTY(msg, state, uint32_t);
+        SetDriveState(state);
     }
     else if (DRIVE_SETPOINT_ID == msg->p_id)
     {
-        GET_SET_PROPERTY(msg, state, float);
+        GET_SET_PROPERTY(msg, setpoint, float);
+        DriveSetpointMessage_t msg = {.setpoint = setpoint};
+        HandleSetpointChange(&msg);
+    }
+    else if (DRIVE_ACTUAL_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, actual, float);
     }
 }
 
@@ -197,6 +204,11 @@ static void HandleTimedActivity(Message_t* msg)
 {
     UNUSED(msg);
 
+    if (last_time < 1)
+    {
+        last_time = (float) OSGetTime();
+    }
+
     float current_time = (float)OSGetTime();
 
     // position error (how far away from line are we and in what direction)
@@ -218,6 +230,7 @@ static void HandleTimedActivity(Message_t* msg)
 
     // save last time for next calculation
     last_time = current_time;
+    previous_error = error;
 
 #ifdef DRIVE_CTL_TRACE_ENABLED
     ControlLoopTrace(left_output, right_output, error, actual);
@@ -271,8 +284,11 @@ static void ClearPIDState()
     setpoint = 0.0;
     actual = 0.0;
     previous_error = 0.0;
-    last_time = 0.0; // FIXME: need to get better initial time
+    last_time = 0.0;
     i_accumulator = 0.0;
+    base_output_percent = 0.0;
+
+    TimedEventDisable(&drive_control_loop_periodic_event);
 }
 
 /**
