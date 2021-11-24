@@ -226,6 +226,9 @@ static void HandleTimedActivity(Message_t* msg)
     float left_output = base_output_percent + motor_speed;
     float right_output = base_output_percent - motor_speed;
 
+    left_output = BoundDrivePercent(left_output);
+    right_output = BoundDrivePercent(right_output);
+
     SetOutoutPercent(left_output, right_output);
 
     // save last time for next calculation
