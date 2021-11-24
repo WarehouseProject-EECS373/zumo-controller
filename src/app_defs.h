@@ -167,7 +167,7 @@ typedef struct PropertyGetSetMessage_s
 } while(false);                                             \
 
 #define SET_PROPERTY(msg, var, vartype) do {                \
-     var = *((vartype*)(msg->value + 1));                   \
+     var = *((vartype*)(msg->value));                       \
 } while (false);                                            \
 
 #define GET_SET_PROPERTY(msg, var, vartype) do {            \

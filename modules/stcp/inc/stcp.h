@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#define HEADER ((uint8_t)0x7B)
+#define HEADER ((uint8_t)0x7A)
 #define FOOTER ((uint8_t)0x7F)
-#define ESCAPE ((uint8_t)0x7A)
+#define ESCAPE ((uint8_t)0x7B)
 
 #define STCP_STATUS_SUCCESS         0
 #define STCP_STATUS_UNDEFINED_ERROR 1

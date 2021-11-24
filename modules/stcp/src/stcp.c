@@ -49,6 +49,7 @@ static uint8_t *Escape(uint8_t *buffer, uint16_t *size)
     }
 
     write_payload_buffer[output_idx++] = FOOTER;
+    write_payload_buffer[output_idx++] = FOOTER;
 
     *size = output_idx;
 
@@ -60,11 +61,11 @@ static uint8_t *UnEscape(uint8_t *buffer, uint16_t *size)
     uint16_t output_idx = 0;
 
     // ignore header/footer when doing this
-    for (uint16_t i = 1; i < *size - 1; ++i)
+    for (uint16_t i = 1; i < *size - 2; ++i)
     {
-        if (ESCAPE == buffer[i] || FOOTER == buffer[i] || HEADER == buffer[i])
+        if (ESCAPE == buffer[i])
         {
-            read_payload_buffer[output_idx++] = buffer[i++];
+            read_payload_buffer[output_idx++] = buffer[++i];
         }
         else
         {

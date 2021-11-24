@@ -8,19 +8,16 @@
 
 // debug message configuration
 #define MSG_OS_TRACE_ID        0x2
-#define MSG_OS_TRACE_SIZE      8
+#define MSG_OS_TRACE_SIZE      7
 
 #define MSG_DRIVE_TRACE_ID      0x3
-#define MSG_DRIVE_TRACE_SIZE    18
+#define MSG_DRIVE_TRACE_SIZE    17
 
 #define MSG_DRIVE_TRACE_INIT_ID     0x4
-#define MSG_DRIVE_TRACE_INIT_SIZE   6
+#define MSG_DRIVE_TRACE_INIT_SIZE   5
 
 #define MSG_LINE_FOLLOW_ID          0x5
-#define MSG_LINE_FOLLOW_SIZE        14
-
-#define MSG_END_CHAR     0x5A
-
+#define MSG_LINE_FOLLOW_SIZE        13
 
 #if (LINE_FOLLOW_TRACE_ENABLED && OS_TRACE_ENABLED) || (DRIVE_CTL_TRACE_ENABLED && OS_TRACE_ENABLED)
 #error "OS_TRACE_ENABLED along with control loop or line following trace. Consider disabling OS tracing to improve performace"
@@ -39,11 +36,9 @@ extern void LineFollowTrace(uint16_t *measurements)
     uint8_t* mem_block = OSMemoryBlockNew(&lft_msg.mem_key, MEMORY_BLOCK_32, &status);
     
     mem_block[0] = MSG_LINE_FOLLOW_ID;
-    mem_block[MSG_LINE_FOLLOW_SIZE - 1] = MSG_END_CHAR;
 
     uint16_t* m_start = (uint16_t*)(mem_block + 1);
     os_memcpy(m_start, measurements, 6 * sizeof(uint16_t));
-
 
     MsgQueuePut(&comms_ss_ao, &lft_msg); 
 }
@@ -61,7 +56,6 @@ extern void ControlLoopTraceInit(float setpoint)
     clt_msg.payload[0] = MSG_DRIVE_TRACE_INIT_ID;
     float* sp = (float*)(clt_msg.payload + 1);
     *sp = setpoint;
-    clt_msg.payload[5] = MSG_END_CHAR;
 
     MsgQueuePut(&comms_ss_ao, &clt_msg);
 }
@@ -84,7 +78,6 @@ extern void ControlLoopTrace(float left_out, float right_out, float error, float
     m_start[1] = right_out;
     m_start[2] = error;
     m_start[3] = actual;
-    mem_block[MSG_DRIVE_TRACE_SIZE - 1] = MSG_END_CHAR;
 
     MsgQueuePut(&comms_ss_ao, &clt_msg);
 }
@@ -112,8 +105,6 @@ extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue)
 
    uint32_t *id_start = (uint32_t*)(debug_msg.payload + 3);
    *id_start = msg_id;
-
-   debug_msg.payload[7] = MSG_END_CHAR;
 
    MsgQueuePut(&comms_ss_ao, &debug_msg);
 }

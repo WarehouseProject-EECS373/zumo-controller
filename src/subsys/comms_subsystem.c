@@ -24,7 +24,6 @@
 // incoming message from warehouse for dispatch
 #define MSG_DISPATCH_ID     0x1
 
-
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
@@ -57,9 +56,9 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
         // add byte in UART data register to rx buffer
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
 
-        // all incoming packets are terminated by FOOTER, make sure FOOTER is not escaped
+        // all incoming packets are terminated by 2 FOOTER characters
         if(UART_RX_BUFFER_SIZE <= rx_buffer_count || (rx_buffer[rx_buffer_count
-         - 1] == FOOTER && rx_buffer[rx_buffer_count - 2] != ESCAPE))
+         - 1] == FOOTER && rx_buffer[rx_buffer_count - 2] == FOOTER))
         {
             // don't fill or modify buffer while unpacking it
             DISABLE_INTERRUPTS();
@@ -123,7 +122,7 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         msg.base.msg_size = sizeof(PropertyGetSetMessage_t);
         msg.p_id = *((uint16_t *)(payload + 1));
         
-        os_memcpy(msg.value, (void*)(payload + 4), 4);
+        os_memcpy(msg.value, (void*)(payload + 3), 4);
 
         if (msg.p_id <= DRIVE_PROPERTY_MAX_ID)
         {

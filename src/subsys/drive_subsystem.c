@@ -59,9 +59,9 @@ static float deadband = 0.0;
 static uint32_t drive_control_loop_period = 10;
 
 // position control PID constants
-static float kP = 0.0;
-static float kI = 0.0;
-static float kD = 0.0;
+static float kP = 1.0;
+static float kI = 2.0;
+static float kD = 3.0;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
