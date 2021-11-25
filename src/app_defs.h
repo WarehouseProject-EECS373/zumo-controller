@@ -72,7 +72,12 @@ typedef struct LineFollowMessage_s
     uint8_t intersection_count;
 } LineFollowMessage_t;
 
-
+typedef struct PropertyGetSetMessage_s
+{
+    Message_t base;
+    uint16_t p_id;
+    uint8_t value[4];
+} PropertyGetSetMessage_t;
 
 //*****************************************************************/
 // MESSAGE IDs
@@ -120,15 +125,77 @@ typedef struct LineFollowMessage_s
 #define FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID   0x62
 
 // comms subsystem
-#define UART_SMALL_PACKET_MSG_ID 0x81
-#define UART_LARGE_PACKET_MSG_ID 0x82
-#define OS_DEBUG_MSG_ID          0x83
+#define UART_SMALL_PACKET_MSG_ID    0x81
+#define UART_LARGE_PACKET_MSG_ID    0x82
+#define OS_DEBUG_MSG_ID             0x83
+#define DRIVE_CTL_TRACE_MSG_ID      0x84
+#define DRIVE_CTL_TRACE_INIT_MSG_ID 0x85
+#define LINE_FOLLOW_TRACE_MSG_ID    0x86
 
 // main state machine
 #define SM_PERIODIC_EVENT_MSG_ID        0x100
 
 #define SM_DISPATCH_FROM_IDLE_MSG_ID    0x110
 #define SM_CALIBRATE_DONE               0x120
+
+//*****************************************************************/
+// Property Management
+//*****************************************************************/
+
+ 
+#define MSG_P_GET_ID            0x10
+#define MSG_P_GET_RESPONSE_ID   0x11
+
+#define MSG_P_SET_ID            0x20
+
+#define GET_PROPERTY_MSG_ID     0x220
+#define SET_PROPERTY_MSG_ID     0x221
+
+// TODO: fix all message lengths, do not include end char anywhere
+// TODO: add stcp library
+
+
+#define GET_PROPERTY(var, vartype) do                       \
+{                                                           \
+    UartSmallPacketMessage_t msg;                           \
+    msg.base.id = UART_SMALL_PACKET_MSG_ID;                 \
+    msg.base.msg_size = sizeof(UartSmallPacketMessage_t);   \
+    msg.payload[0] = MSG_P_GET_RESPONSE_ID;                 \
+    msg.length = 5;                                         \
+    vartype* start = (vartype*)(msg.payload + 1);           \
+    *start = var;                                           \
+    MsgQueuePut(&comms_ss_ao, &msg);                        \
+} while(false);                                             \
+
+#define SET_PROPERTY(msg, var, vartype) do {                \
+     var = *((vartype*)(msg->value));                       \
+} while (false);                                            \
+
+#define GET_SET_PROPERTY(msg, var, vartype) do {            \
+    if (GET_PROPERTY_MSG_ID == msg->base.id)                \
+    {                                                       \
+        GET_PROPERTY(var, vartype);                         \
+    }                                                       \
+    else if (SET_PROPERTY_MSG_ID == msg->base.id)           \
+    {                                                       \
+        SET_PROPERTY(msg, var, vartype);                    \
+    }                                                       \
+} while(false);                                             \
+
+
+#define DRIVE_PROPERTY_MIN_ID       0x0
+#define DRIVE_PROPERTY_MAX_ID       0xA
+
+#define DRIVE_DEADBAND_ID           0x0
+#define DRIVE_CTL_LOOP_PERIOD_ID    0x1
+#define DRIVE_kP_ID                 0x2
+#define DRIVE_kI_ID                 0x3
+#define DRIVE_kD_ID                 0x4
+#define DRIVE_BASE_OUTPUT_ID        0x5
+#define DRIVE_STATE_ID              0x6
+#define DRIVE_SETPOINT_ID           0x7
+#define DRIVE_ACTUAL_ID             0x8
+
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration

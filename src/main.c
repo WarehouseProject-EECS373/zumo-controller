@@ -15,6 +15,8 @@
 #include "subsys/reflectance_array_subsystem.h"
 #include "subsys/comms_subsystem.h"
 
+#include "trace.h"
+
 #include "state_controller.h"
 
 #include "watchdog.h"
@@ -71,10 +73,24 @@ void OnKernelInit()
     HAL_NVIC_EnableIRQ(PendSV_IRQn);
 }
 
+void CheckMessageSizes()
+{
+    STATIC_ASSERT(sizeof(DriveControlMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(DriveSetpointMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(DriveTimedTurn_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(DriveBaseVelocityMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(DriveOpenLoopControlMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(UartSmallPacketMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(UartLargePacketMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(DispatchMessage_t) <= OS_MESSAGE_MAX_SIZE);
+    STATIC_ASSERT(sizeof(LineFollowMessage_t) <= OS_MESSAGE_MAX_SIZE);
+}
+
 int main()
 {
     // disable interrupts while setting everything up
     DISABLE_INTERRUPTS();
+    CheckMessageSizes();
 
     HAL_Init();
 
@@ -110,7 +126,7 @@ int main()
     OSCallbacksCfg_t os_callback_cfg = {
         .on_Idle = NULL, .on_Init = OnKernelInit, .on_SysTick = NULL, .on_DebugPrint = NULL};
 
-#ifdef DEBUG_MODE_ENABLED
+#ifdef OS_TRACE_ENABLED
     os_callback_cfg.on_DebugPrint = DebugPrint;
 #endif
 

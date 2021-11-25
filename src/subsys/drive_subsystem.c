@@ -6,6 +6,8 @@
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
 
+#include "trace.h"
+
 // pin configurations for drive
 
 #define MOTOR_PWM_TIMER_RIGHT TIM3
@@ -33,8 +35,6 @@
 #define PWM_FREQ      (SystemCoreClock / ((PRESCALER) + 1))
 #define DUTY_PULSE(x) ((uint32_t)((x) * (PERIOD))) // [0.0, 1.0] mapped to [0, PERIOD]
 
-#define DRIVE_CONTROL_LOOP_PERIOD 10
-
 // drive subsystem states
 #define DRIVE_STATE_DISABLED 0
 #define DRIVE_STATE_ENABLED  1
@@ -48,22 +48,24 @@
 #define LEFT_MOTOR_ORIENTATION  1
 #define RIGHT_MOTOR_ORIENTATION 1
 
-// if we ever get small output percent that's "close enough" to 0.0 but PID
-// doesn't drive to exactly 0.0
-#define DEADBAND 0.0
-
 // minimum and maximum output percents
 #define MAX_DRIVE_PERCENT 1.0
 #define MIN_DRIVE_PERCENT -1.0
 
+
+// if we ever get small output percent that's "close enough" to 0.0 but PID
+// doesn't drive to exactly 0.0
+static float deadband = 0.0;
+static uint32_t drive_control_loop_period = 10;
+
 // position control PID constants
-#define kP 0.0
-#define kI 0.0
-#define kD 0.0
+static float kP = 1.0;
+static float kI = 0.0;
+static float kD = 0.0;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
-static float base_output_percent = 0.0;
+static float base_output_percent = 0.5;
 
 // position control
 static float setpoint = 0.0;
@@ -106,6 +108,51 @@ static void ClearPIDState();
 static void ConfigureGPIO();
 static void ConfigureTimer();
 
+static void PropertyHandler(PropertyGetSetMessage_t *msg);
+
+static void PropertyHandler(PropertyGetSetMessage_t *msg)
+{
+    if (DRIVE_DEADBAND_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, deadband, float);
+    }
+    else if (DRIVE_CTL_LOOP_PERIOD_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, drive_control_loop_period, uint32_t);
+    }
+    else if (DRIVE_kP_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, kP, float);
+    }
+    else if (DRIVE_kI_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, kI, float);
+    }
+    else if (DRIVE_kD_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, kD, float);
+    }
+    else if (DRIVE_BASE_OUTPUT_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, base_output_percent, float);
+    }
+    else if (DRIVE_STATE_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, state, uint32_t);
+        SetDriveState(state);
+    }
+    else if (DRIVE_SETPOINT_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, setpoint, float);
+        DriveSetpointMessage_t msg = {.setpoint = setpoint};
+        HandleSetpointChange(&msg);
+    }
+    else if (DRIVE_ACTUAL_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, actual, float);
+    }
+}
+
 /**
  * @brief bounds desired output percent between -1.0 and 1.0
  *
@@ -138,7 +185,7 @@ static float BoundDrivePercent(float output)
 static float ApplyDriveDeadband(float value)
 {
     // TODO: make generic to accept and target, not just 0.0
-    if(value < DEADBAND && value > -1 * DEADBAND)
+    if(value < deadband && value > -1 * deadband)
     {
         return 0.0;
     }
@@ -157,6 +204,11 @@ static void HandleTimedActivity(Message_t* msg)
 {
     UNUSED(msg);
 
+    if (last_time < 1)
+    {
+        last_time = (float) OSGetTime();
+    }
+
     float current_time = (float)OSGetTime();
 
     // position error (how far away from line are we and in what direction)
@@ -168,16 +220,24 @@ static void HandleTimedActivity(Message_t* msg)
     float d = (error - previous_error) / (current_time - last_time);
 
     // sum scaled P, I, D
-    float motor_speed = kP * p + kI * i_accumulator + kI * d;
+    float motor_speed = kP * p + kI * i_accumulator + kD * d;
 
     // calculate left and right percent output
     float left_output = base_output_percent + motor_speed;
     float right_output = base_output_percent - motor_speed;
 
+    left_output = BoundDrivePercent(left_output);
+    right_output = BoundDrivePercent(right_output);
+
     SetOutoutPercent(left_output, right_output);
 
     // save last time for next calculation
     last_time = current_time;
+    previous_error = error;
+
+#ifdef DRIVE_CTL_TRACE_ENABLED
+    ControlLoopTrace(left_output, right_output, error, actual);
+#endif
 }
 
 /**
@@ -227,8 +287,11 @@ static void ClearPIDState()
     setpoint = 0.0;
     actual = 0.0;
     previous_error = 0.0;
-    last_time = 0.0; // FIXME: need to get better initial time
+    last_time = 0.0;
     i_accumulator = 0.0;
+    base_output_percent = 0.0;
+
+    TimedEventDisable(&drive_control_loop_periodic_event);
 }
 
 /**
@@ -243,9 +306,13 @@ static void HandleSetpointChange(DriveSetpointMessage_t* msg)
 
     if (!drive_control_loop_periodic_event.active)
     {
-        TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao, &drive_control_loop_periodic_msg, DRIVE_CONTROL_LOOP_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+        TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao, &drive_control_loop_periodic_msg, drive_control_loop_period, TIMED_EVENT_PERIODIC_TYPE);
         SchedulerAddTimedEvent(&drive_control_loop_periodic_event);
     }
+
+#ifdef DRIVE_CTL_TRACE_ENABLED
+    ControlLoopTraceInit(setpoint);
+#endif
 }
 
 /**
@@ -363,6 +430,10 @@ extern void DriveEventHandler(Message_t* msg)
         drive_mode = DRIVE_MODE_OPEN_LOOP;
         TimedEventDisable(&drive_control_loop_periodic_event);
         SetOutoutPercent(cmsg->percent_left, cmsg->percent_right);
+    }
+    else if (GET_PROPERTY_MSG_ID == msg->id || SET_PROPERTY_MSG_ID == msg->id)
+    {
+        PropertyHandler((PropertyGetSetMessage_t*)msg);
     }
 }
 
@@ -506,3 +577,4 @@ static void SetOutoutPercent(float left_percent_output, float right_percent_outp
     HAL_TIM_PWM_Start(&motor_pwm_left, LEFT_PWM_CHANNEL);
     HAL_TIM_PWM_Start(&motor_pwm_right, RIGHT_PWM_CHANNEL);
 }
+

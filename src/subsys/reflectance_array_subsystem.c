@@ -7,6 +7,8 @@
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
 
+#include "trace.h"
+
 // states for periodic event
 #define STATE_DISABLED       0x0
 #define STATE_CALIBRATE      0x1
@@ -46,6 +48,9 @@ static uint16_t max_sensor_readings[6] = {0,0,0,0,0,0};
 static uint16_t min_sensor_readings[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
 static uint32_t last_val = 2500;
+
+
+static uint16_t sensor_values[6];
 
 // current states
 static uint32_t state = STATE_DISABLED;
@@ -321,6 +326,10 @@ static void HandleSensorRead()
 
             StopLineFollow();
         }
+#ifdef LINE_FOLLOW_TRACE_ENABLED
+        LineFollowTrace(sensor_values);
+
+#endif
     }
     
     //stop taking repeated calibration measurements of sensors
@@ -338,6 +347,9 @@ static void HandleSensorRead()
                 min_sensor_readings[i] = reading;
             }
         }
+
+
+
     }
 }
 

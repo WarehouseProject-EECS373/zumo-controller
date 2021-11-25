@@ -3,4 +3,4 @@
 	url = https://github.com/ObKo/stm32-cmake.git
 [submodule "modules/rmkernel"]
 	path = modules/rmkernel
-	url = https://github.com/WarehouseProject-EECS373/rmkernel.git
+	url = https://github.com/rkalnins/rmkernel.git
