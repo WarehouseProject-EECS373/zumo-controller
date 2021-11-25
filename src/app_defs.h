@@ -104,7 +104,7 @@ typedef struct LineFollowMessage_s
 #define DRIVE_TURN_DIR_LEFT   0
 #define DRIVE_TURN_DIR_RIGHT  1
 
-// reflectance array
+// reflectance array //ask about priorities
 #define REFARR_CALIBRATE_MSG_ID         0x30
 #define REFARR_ON_MSG_ID                0x32
 #define REFARR_OFF_MSG_ID               0x33
@@ -114,6 +114,7 @@ typedef struct LineFollowMessage_s
 #define REFARR_START_LINE_FOLLOW_MSG_ID 0x37
 #define REFARR_STOP_LINE_FOLLOW_MSG_ID  0x38
 #define REFARR_INTERSECTION_COUNT_HIT   0x39
+#define REFARR_PROCESS_READING_MSG_ID   0x3A
 
 #define PUSH_BUTTON_PRESSED_MSG_ID          0x61
 #define FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID   0x62
