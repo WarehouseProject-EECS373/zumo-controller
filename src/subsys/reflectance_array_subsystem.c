@@ -3,6 +3,7 @@
 #include <os.h>
 #include <stm32f4xx_hal.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
@@ -35,22 +36,19 @@
 
 static TimedEventSimple_t line_follow_periodic_event;
 static  Message_t line_follow_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
-static TIM_HandleTypeDef htim3;
-static TIM_HandleTypeDef htim4;
-static TIM_HandleTypeDef htim5;
+static TIM_HandleTypeDef htim11; //output compare no output
+static TIM_HandleTypeDef htim4; //input capture 
+static TIM_HandleTypeDef htim5; //input capture
 static GPIO_InitTypeDef gpioc = {0};
-
+UART_HandleTypeDef huart2;
 static uint16_t sensor_values[6];
-uint16_t read_buffer[6];
+static uint16_t read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
 static uint16_t max_sensor_readings[6] = {0,0,0,0,0,0};
 static uint16_t min_sensor_readings[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
 static uint32_t last_val = 2500;
-
-
-static uint16_t sensor_values[6];
 
 // current states
 static uint32_t state = STATE_DISABLED;
@@ -67,10 +65,10 @@ static void StartLineFollow(LineFollowMessage_t *msg);
 static void StopLineFollow();
 static void HandleSensorRead();
 
-__attribute__((__interrupt__)) extern void TIM3_IRQHandler()
+__attribute__((__interrupt__)) extern void TIM11_IRQHandler()
 {
     OS_ISR_ENTER();
-    HAL_TIM_IRQHandler(&htim3);
+    HAL_TIM_IRQHandler(&htim11);
     OS_ISR_EXIT();
 }
 
@@ -91,8 +89,8 @@ __attribute__((__interrupt__)) extern void TIM5_IRQHandler()
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 
 	  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1){
-		   TIM3->CR1 &= ~((uint32_t)1);
-		   TIM3->CNT = 0;
+		   TIM11->CR1 &= ~((uint32_t)1);
+		   TIM11->CNT = 0;
 		   gpioc.Mode = GPIO_MODE_INPUT;
            HAL_GPIO_Init(GPIOC, &gpioc);
 		   HAL_TIM_IC_Start_IT(&htim4,TIM_CHANNEL_1);
@@ -136,10 +134,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
             ++glob_count;
 		}
 	}
-	if (glob_count == 6){
+	if (glob_count >= 6){
         glob_count = 0;
-        Message_t pr_msg = {.id = REFARR_PROCESS_READING_MSG_ID, .msg_size = sizeof(Message_t)};
+		TIM4->CR1 &= ~((uint32_t)1);
+		TIM5->CR1 &= ~((uint32_t)1);
+		TIM4->CNT = 0;
+		TIM5->CNT = 0;
+        glob_count = 0;
         memcpy(sensor_values, read_buffer, sizeof(sensor_values));
+        Message_t pr_msg = {.id = REFARR_PROCESS_READING_MSG_ID, .msg_size = sizeof(Message_t)};        
         MsgQueuePut(&refarr_ss_ao, &pr_msg);
     }
 		
@@ -233,8 +236,8 @@ static void HandlePeriodicEvent()
     GPIOC->BSRR = gpioc.Pin;
     
     //start sensor read sequence
-    __HAL_TIM_ENABLE_IT(&htim3, TIM_IT_CC1);
-	TIM3->CR1 |= 1;
+    __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_CC1);
+	TIM11->CR1 |= 1;
 }
 
 static void HandleSensorRead()
@@ -398,45 +401,101 @@ static void StopLineFollow()
     TimedEventDisable(&line_follow_periodic_event);
 }
 
+extern void ReflectanceArrayEventHandler(Message_t* msg)
+{
+    printf("hello?\r\n");
+
+    if (REFARR_CALIBRATE_MSG_ID == msg->id)
+    {
+        HandleStartCalibration();
+    }
+    else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
+    {
+        HandleTimedTurnDoneMsg();
+    }
+    else if (REFARR_START_LINE_FOLLOW_MSG_ID == msg->id)
+    {
+        StartLineFollow((LineFollowMessage_t*)msg);
+    }
+    else if (REFARR_STOP_LINE_FOLLOW_MSG_ID == msg->id)
+    {
+        StopLineFollow();
+    }
+    else if (REFARR_PERIODIC_EVENT_MSG_ID == msg->id)
+    {
+        HandlePeriodicEvent();       
+    }
+    else if(REFARR_PROCESS_READING_MSG_ID == msg->id)
+    {
+        HandleSensorRead();
+    }
+}
+
+
 extern void REFARR_Init()
 {
-    //init gpios
+
+    //init gpios that charge/discharge capacitor
     gpioc.Pull = GPIO_NOPULL;
     gpioc.Speed = GPIO_SPEED_FREQ_LOW;
     gpioc.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
                                      |GPIO_PIN_4|GPIO_PIN_5;
-    //init compare timer
+
+
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    //timer 11: used to start read sequence
+    //enable timer 11 interrupts 
+    HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+
+    //configure timer 4 gpios for input capture; used to measure t(cap. discharge)
+    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    //enable timer 4 interrupts
+    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+
+    //configure timer 5 gpios for input capture; used to measure t(cap. discharge)
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    //enable timer 5 interrupts
+    HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM5_IRQn);
+
     TIM_ClockConfigTypeDef sClockSourceConfig = {0};
     TIM_MasterConfigTypeDef sMasterConfig = {0};
     TIM_OC_InitTypeDef sConfigOC = {0};
     TIM_IC_InitTypeDef sConfigIC = {0};
 
-    htim3.Instance = TIM3;
-    htim3.Init.Prescaler = 15;
-    htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim3.Init.Period = 65535;
-    htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    HAL_TIM_Base_Init(&htim3);
-
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig);
-
-    HAL_TIM_OC_Init(&htim3);
-
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig);
-
+    //init timer 11: compare timer
+    htim11.Instance = TIM11;
+    htim11.Init.Prescaler = 15;
+    htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim11.Init.Period = 65535;
+    htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    HAL_TIM_Base_Init(&htim11);
+    HAL_TIM_OC_Init(&htim11);
     sConfigOC.OCMode = TIM_OCMODE_TIMING;
     sConfigOC.Pulse = 0;
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1);
+    HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1);
+    TIM11->CCR1 = 15;
 
-    TIM3->CCR1 = 10;
-
-    //capture timers init
+    //init timer 4: capture timer
     htim4.Instance = TIM4;
     htim4.Init.Prescaler = 15;
     htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -462,7 +521,7 @@ extern void REFARR_Init()
     HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_3);
     HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_4);
 
-    //timer5
+    //int timer 5: capture timer
     htim5.Instance = TIM5;
     htim5.Init.Prescaler = 15;
     htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -476,34 +535,9 @@ extern void REFARR_Init()
     HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig);
     HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1);
     HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_2);
+   
+
+ 
 }
 
-
-
-extern void ReflectanceArrayEventHandler(Message_t* msg)
-{
-    if (REFARR_CALIBRATE_MSG_ID == msg->id)
-    {
-        HandleStartCalibration();
-    }
-    else if (DRIVE_TIMED_TURN_DONE_MSG_ID == msg->id)
-    {
-        HandleTimedTurnDoneMsg();
-    }
-    else if (REFARR_START_LINE_FOLLOW_MSG_ID == msg->id)
-    {
-        StartLineFollow((LineFollowMessage_t*)msg);
-    }
-    else if (REFARR_STOP_LINE_FOLLOW_MSG_ID == msg->id)
-    {
-        StopLineFollow();
-    }
-    else if (REFARR_PERIODIC_EVENT_MSG_ID == msg->id)
-    {
-        HandlePeriodicEvent();       
-    }
-    else if(REFARR_PROCESS_READING_MSG_ID == msg->id)
-    {
-        HandleSensorRead();
-    }
 }
