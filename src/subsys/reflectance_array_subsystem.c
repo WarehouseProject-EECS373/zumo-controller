@@ -30,7 +30,7 @@
 #define ON_LINE_THRESHOLD 300// are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)((val) > NOISE_THRESHOLD)
-#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  10
+#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  30
 #define MAX_READING 3000
 #define MIDPOINT 2500
 
