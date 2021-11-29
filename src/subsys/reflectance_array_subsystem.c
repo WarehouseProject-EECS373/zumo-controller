@@ -3,7 +3,7 @@
 #include <os.h>
 #include <stm32f4xx_hal.h>
 #include <string.h>
-#include <stdio.h>
+
 
 #include "app_defs.h"
 #include "stm/stm32f4xx.h"
@@ -65,7 +65,7 @@ static void StartLineFollow(LineFollowMessage_t *msg);
 static void StopLineFollow();
 static void HandleSensorRead();
 
-__attribute__((__interrupt__)) extern void TIM11_IRQHandler()
+__attribute__((__interrupt__)) extern void TIM1_TRG_COM_TIM11_IRQHandler()
 {
     OS_ISR_ENTER();
     HAL_TIM_IRQHandler(&htim11);
@@ -403,7 +403,6 @@ static void StopLineFollow()
 
 extern void ReflectanceArrayEventHandler(Message_t* msg)
 {
-    printf("hello?\r\n");
 
     if (REFARR_CALIBRATE_MSG_ID == msg->id)
     {
@@ -536,8 +535,5 @@ extern void REFARR_Init()
     HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1);
     HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_2);
    
-
- 
 }
 
-}
