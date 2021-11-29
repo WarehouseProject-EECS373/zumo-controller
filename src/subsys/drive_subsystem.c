@@ -371,12 +371,12 @@ static void HandleStartTimedTurn(DriveTimedTurn_t* msg)
     if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
     {
         // TODO: make turn speed configurable
-        SetOutoutPercent(-0.1, 0.1);
+        SetOutoutPercent(-0.2, 0.2);
     }
     else
     {
         // TODO: make turn speed configurable
-        SetOutoutPercent(0.1, -0.1);
+        SetOutoutPercent(0.2, -0.2);
     }
 }
 

@@ -24,6 +24,9 @@
 // incoming message from warehouse for dispatch
 #define MSG_DISPATCH_ID     0x1
 
+#define MSG_LINE_FOLLOWING_ID 0xD
+
+#define EXPECTED_LINE_FOLLOW_LENGTH 2
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
@@ -128,6 +131,22 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         {
             MsgQueuePut(&drive_ss_ao, &msg);
         }
+    }
+    else if (MSG_LINE_FOLLOWING_ID == payload[MESSAGE_ID_IDX])
+    {
+        if (EXPECTED_LINE_FOLLOW_LENGTH != length)
+        {
+            return STCP_STATUS_UNDEFINED_ERROR;
+        }
+
+        LineFollowMessage_t lf_msg;
+        lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+        lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+        lf_msg.base_speed = 0.5;
+        lf_msg.intersection_count = payload[1];
+        lf_msg.response = &state_ctl_ao;
+
+        MsgQueuePut(&refarr_ss_ao, &lf_msg);
     }
 
     return STCP_STATUS_SUCCESS;

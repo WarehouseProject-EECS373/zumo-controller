@@ -24,18 +24,18 @@
 // duration of turn of calibration
 // should not really be timed but we don't have encoders
 // can go to gyro/magnetometer eventually if have time
-#define CALIBRATION_TIMED_TURN_DURATION 500
+#define CALIBRATION_TIMED_TURN_DURATION 2000
 
 #define NOISE_THRESHOLD 50
-#define ON_LINE_THRESHOLD 300// are sensors over line? FIXME: need to determine experimentally
+#define ON_LINE_THRESHOLD 3000// are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)((val) > NOISE_THRESHOLD)
 #define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  30
 #define MAX_READING 3000
 #define MIDPOINT 2500
 
-static TimedEventSimple_t line_follow_periodic_event;
-static  Message_t line_follow_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
+static TimedEventSimple_t sensor_read_periodic_event;
+static  Message_t sensor_read_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
 static TIM_HandleTypeDef htim11; //output compare no output
 static TIM_HandleTypeDef htim4; //input capture 
 static TIM_HandleTypeDef htim5; //input capture
@@ -45,8 +45,8 @@ static uint16_t sensor_values[6];
 static uint16_t read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
-static uint16_t max_sensor_readings[6] = {0,0,0,0,0,0};
-static uint16_t min_sensor_readings[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
+static uint16_t max_sensor_readings[6] = {3017, 2578, 2250, 2469, 3025, 3744};
+static uint16_t min_sensor_readings[6] = {326, 281, 236, 250, 255, 323};
 
 static uint32_t last_val = 2500;
 
@@ -152,7 +152,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
 static void HandleStartCalibration()
 {
     state = STATE_CALIBRATE;
-        
+    
+    TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&sensor_read_periodic_event);
     // start calibration process with timed turn left
     DriveTimedTurn_t ttmsg;
     ttmsg.base.id = DRIVE_TIMED_TURN_MSG_ID;
@@ -249,22 +251,26 @@ static void HandleSensorRead()
         for (i = 0; i < 6; i++)
         {   
             //calibrateto val between 0 and 1000
-            uint32_t calmin = min_sensor_readings[i];
-            uint32_t calmax = max_sensor_readings[i];
-            uint32_t interval = calmax - calmin;
-            int reading = (((int)sensor_values[i]) - calmin) * 1000 / interval;
+            int32_t calmin = min_sensor_readings[i];
+            int32_t calmax = max_sensor_readings[i];
+            int32_t interval = calmax - calmin;
+            int32_t reading = (int32_t)sensor_values[i] - calmin;
+            reading *= 1000.0/(float)interval;
+
             
             //adjust max and min values continuously
+            
             if(reading < 0)
             {
                 reading = 0;
-                min_sensor_readings[i] = sensor_values[i];
+                //min_sensor_readings[i] = sensor_values[i];
             }
-            else if(reading > 0)
+            else if(reading > 1000)
             {
                 reading = 1000;
-                max_sensor_readings[i] = sensor_values[i];
+                //max_sensor_readings[i] = sensor_values[i];
             }
+            
             sensor_values[i] = reading;
         }
         
@@ -285,8 +291,8 @@ static void HandleSensorRead()
                 avg += val * i * 1000;
                 sum += val;
             }
-
-            if (!on_line)
+        }
+        if (!on_line)
             {
                 if(last_val < MIDPOINT)
                 {   
@@ -305,16 +311,18 @@ static void HandleSensorRead()
                     dcmmsg.actual = 5000;
                     MsgQueuePut(&drive_ss_ao, &dcmmsg);
                 }
-
-                last_val = avg/sum;
-                DriveControlMessage_t dcmmsg;
-                dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
-                dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-                dcmmsg.actual = (float)last_val;
-                MsgQueuePut(&drive_ss_ao, &dcmmsg);
+ 
             } 
-
+        else
+        {    
+            last_val = avg/sum;
+            DriveControlMessage_t dcmmsg;
+            dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
+            dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
+            dcmmsg.actual = (float)last_val;
+            MsgQueuePut(&drive_ss_ao, &dcmmsg);
         }
+
         
         //monitor intersection count and send message to state controller
         if (ABOVE_LINE(sensor_values[0]) || ABOVE_LINE(sensor_values[5]))
@@ -379,12 +387,12 @@ static void StartLineFollow(LineFollowMessage_t *msg)
     bv_msg.base.msg_size = sizeof(DriveBaseVelocityMessage_t);
     bv_msg.base_velocity = msg->base_speed;
 
-    MsgQueuePut(&drive_ss_ao, &sp_msg);
     MsgQueuePut(&drive_ss_ao, &bv_msg);
+    MsgQueuePut(&drive_ss_ao, &sp_msg);
+    
+    TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&sensor_read_periodic_event);
 
-
-    TimedEventSimpleCreate(&line_follow_periodic_event, &refarr_ss_ao, &line_follow_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    SchedulerAddTimedEvent(&line_follow_periodic_event);
 }
 
 static void StopLineFollow()
@@ -398,7 +406,7 @@ static void StopLineFollow()
     olctl_msg.percent_right = 0.0;
 
     MsgQueuePut(&drive_ss_ao, &olctl_msg);
-    TimedEventDisable(&line_follow_periodic_event);
+    TimedEventDisable(&sensor_read_periodic_event);
 }
 
 extern void ReflectanceArrayEventHandler(Message_t* msg)

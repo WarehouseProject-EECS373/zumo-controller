@@ -8,7 +8,20 @@
         "vector": "c",
         "typeinfo": "c",
         "__locale": "c",
-        "thread": "c"
+        "thread": "c",
+        "*.tcc": "c",
+        "bitset": "c",
+        "fstream": "c",
+        "functional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "numeric": "c",
+        "sstream": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "optional": "c",
+        "random": "c",
+        "future": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false,
     "C_Cpp.errorSquiggles": "Disabled"
