@@ -26,8 +26,8 @@
 // can go to gyro/magnetometer eventually if have time
 #define CALIBRATION_TIMED_TURN_DURATION 2000
 
-#define NOISE_THRESHOLD 50
-#define ON_LINE_THRESHOLD 3000// are sensors over line? FIXME: need to determine experimentally
+#define NOISE_THRESHOLD 0
+#define ON_LINE_THRESHOLD 400// are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)((val) > NOISE_THRESHOLD)
 #define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  30
@@ -275,7 +275,7 @@ static void HandleSensorRead()
         }
         
         //get new actual position and send to drive
-        uint32_t sum, avg = 0;
+        uint32_t sum = 0, avg = 0;
 
         for (i = 0; i < 6; i++)
         {
@@ -315,7 +315,7 @@ static void HandleSensorRead()
             } 
         else
         {    
-            last_val = avg/sum;
+            last_val = (float)avg/(float)sum;
             DriveControlMessage_t dcmmsg;
             dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
             dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
@@ -500,7 +500,7 @@ extern void REFARR_Init()
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
     HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1);
-    TIM11->CCR1 = 15;
+    TIM11->CCR1 = 100;
 
     //init timer 4: capture timer
     htim4.Instance = TIM4;
