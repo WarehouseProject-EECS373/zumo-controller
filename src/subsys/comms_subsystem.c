@@ -26,7 +26,7 @@
 
 #define MSG_LINE_FOLLOWING_ID 0xD
 
-#define EXPECTED_LINE_FOLLOW_LENGTH 2
+#define EXPECTED_LINE_FOLLOW_LENGTH 6
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
@@ -58,10 +58,15 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
     {
         // add byte in UART data register to rx buffer
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
+        
+        if (rx_buffer_count == 1 && rx_buffer[0] != HEADER)
+        {
+            rx_buffer_count = 0;
+        }
 
         // all incoming packets are terminated by 2 FOOTER characters
-        if(UART_RX_BUFFER_SIZE <= rx_buffer_count || (rx_buffer[rx_buffer_count
-         - 1] == FOOTER && rx_buffer[rx_buffer_count - 2] == FOOTER))
+        if(rx_buffer_count > 2 && (UART_RX_BUFFER_SIZE <= rx_buffer_count || (rx_buffer[rx_buffer_count
+         - 1] == FOOTER && rx_buffer[rx_buffer_count - 2] == FOOTER)))
         {
             // don't fill or modify buffer while unpacking it
             DISABLE_INTERRUPTS();
@@ -142,7 +147,7 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         LineFollowMessage_t lf_msg;
         lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
         lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
-        lf_msg.base_speed = 0.5;
+        lf_msg.base_speed = *((float*) (payload + 2));
         lf_msg.intersection_count = payload[1];
         lf_msg.response = &state_ctl_ao;
 
