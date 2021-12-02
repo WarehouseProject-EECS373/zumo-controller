@@ -11,7 +11,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(OS_TRACE_ENABLED 0)
 set(LINE_FOLLOW_TRACE_ENABLED 0)
-set(DRIVE_CONTROL_LOOP_TRACE_ENABLED 0)
+set(DRIVE_CONTROL_LOOP_TRACE_ENABLED 1)
 
 add_definitions(-DSTM32F401xE)
 

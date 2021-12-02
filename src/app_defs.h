@@ -70,6 +70,7 @@ typedef struct LineFollowMessage_s
     ActiveObject_t *response;
     float base_speed;
     uint8_t intersection_count;
+    uint8_t mode; // 4 most sig bits: drive ctl loop enable, lowest 4 are left turn, regular, right turn
 } LineFollowMessage_t;
 
 typedef struct PropertyGetSetMessage_s
@@ -106,8 +107,12 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_OPEN_LOOP_MSG_ID           0x1A
 #define DRIVE_PERIODIC_EVENT_MSG_ID      0x1B
 
-#define DRIVE_TURN_DIR_LEFT   0
-#define DRIVE_TURN_DIR_RIGHT  1
+#define DRIVE_TURN_DIR_LEFT     0
+#define DRIVE_TURN_DIR_RIGHT    1
+
+#define REFARR_LEFT_SENSOR_ENABLE   0x1
+#define REFARR_RIGHT_SENSOR_ENABLE   0x2
+#define REFARR_DRIVE_CTL_ENABLE     0x10
 
 // reflectance array //ask about priorities
 #define REFARR_CALIBRATE_MSG_ID         0x30
@@ -195,6 +200,7 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_STATE_ID              0x6
 #define DRIVE_SETPOINT_ID           0x7
 #define DRIVE_ACTUAL_ID             0x8
+#define DRIVE_I_ZONE_ID             0x9
 
 
 //*****************************************************************/

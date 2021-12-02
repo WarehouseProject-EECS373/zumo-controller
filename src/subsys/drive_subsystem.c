@@ -1,5 +1,8 @@
 #include "drive_subsystem.h"
 
+#include <math.h>
+#include <float.h>
+
 #include <os.h>
 #include <stm32f4xx_hal.h>
 
@@ -56,12 +59,12 @@
 // if we ever get small output percent that's "close enough" to 0.0 but PID
 // doesn't drive to exactly 0.0
 static float deadband = 0.0;
-static uint32_t drive_control_loop_period = 30;
+static uint32_t drive_control_loop_period = 5;
 
 // position control PID constants
-static float kP = 0.0005;
-static float kI = 0.0;
-static float kD = 0.0005;
+static float kP = 0.0018;
+static float kI = 0.00001;
+static float kD = 0.0065;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
@@ -73,6 +76,7 @@ static float actual = 2500.0;
 static float previous_error = 0.0;
 static float last_time = 0.0;
 static float i_accumulator = 0.0;
+static float i_zone = 1500.0;
 
 // drive subsystem state
 static uint32_t state = DRIVE_STATE_DISABLED;
@@ -152,6 +156,10 @@ static void PropertyHandler(PropertyGetSetMessage_t *msg)
     {
         GET_SET_PROPERTY(msg, actual, float);
     }
+    else if (DRIVE_I_ZONE_ID == msg->p_id)
+    {
+        GET_SET_PROPERTY(msg, i_zone, float);
+    }
 }
 
 /**
@@ -218,6 +226,12 @@ static void HandleTimedActivity(Message_t* msg)
     // calculate P, I, D
     float p = error;
     i_accumulator += error * (current_time - last_time);
+
+    if (fabs(i_accumulator) > i_zone)
+    {
+        i_accumulator = copysignf(i_zone, i_accumulator);
+    }
+
     float d = (error - previous_error) / (current_time - last_time);
 
     // sum scaled P, I, D

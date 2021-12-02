@@ -30,9 +30,13 @@
 #define ON_LINE_THRESHOLD 400// are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)((val) > NOISE_THRESHOLD)
-#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  30
+#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD  5
 #define MAX_READING 3000
 #define MIDPOINT 2500
+
+#define NOT_IN_INTERSECTION     0
+#define IN_INTERSECTION         1
+
 
 static TimedEventSimple_t sensor_read_periodic_event;
 static  Message_t sensor_read_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
@@ -45,10 +49,14 @@ static uint16_t sensor_values[6];
 static uint16_t read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
-static uint16_t max_sensor_readings[6] = {2780, 2930, 2630, 2830, 3418, 3519};
-static uint16_t min_sensor_readings[6] = {74, 81, 68, 78, 142, 153};
+static uint16_t max_sensor_readings[6] = {2881, 3532, 2420, 2440, 2910, 3310};
+static uint16_t min_sensor_readings[6] = {91, 105, 76, 88, 59, 94};
 
 static uint32_t last_val = 2500;
+
+static bool drive_control_loop_enabled = true;
+static bool left_intersection_enabled = true;
+static bool right_intersection_enabled = true;
 
 // current states
 static uint32_t state = STATE_DISABLED;
@@ -56,6 +64,12 @@ static uint32_t calibration_state = STATE_CALIBRATE_LEFT_TURN;
 
 static uint16_t intersection_count_target = 0;
 static uint16_t intersection_count_current = 0;
+static uint16_t intersection_debounce_count = 2;
+static uint16_t intersection_debounce_count_current = 0;
+static uint16_t intersection_exit_debounce_count_current = 0;
+static uint32_t previous_line_state = NOT_IN_INTERSECTION;
+static uint32_t current_line_state = NOT_IN_INTERSECTION;
+
 static ActiveObject_t* line_follow_done_response = NULL;
 
 static void HandlePeriodicEvent();
@@ -246,9 +260,7 @@ static void HandleSensorRead()
 { 
     if (STATE_LINE_FOLLOWING == state)
     {   
-        uint8_t i, on_line = 0;
-        
-        for (i = 0; i < 6; i++)
+        for (uint8_t i = 0; i < 6; i++)
         {   
             //calibrateto val between 0 and 1000
             int32_t calmin = min_sensor_readings[i];
@@ -277,14 +289,9 @@ static void HandleSensorRead()
         //get new actual position and send to drive
         uint32_t sum = 0, avg = 0;
 
-        for (i = 0; i < 6; i++)
+        for (uint8_t i = 0; i < 6; i++)
         {
             uint32_t val = (uint32_t)(sensor_values[i]);
-            
-            if (ABOVE_LINE(val))
-            {
-                on_line = 1;
-            }
             
             if (ABOVE_NOISE_THRESH(val))
             {
@@ -292,48 +299,60 @@ static void HandleSensorRead()
                 sum += val;
             }
         }
-        /*
-        if (!on_line)
+
+        bool possibly_at_intersection = (left_intersection_enabled && ABOVE_LINE(sensor_values[0])) || (right_intersection_enabled && ABOVE_LINE(sensor_values[5]));
+
+        if (possibly_at_intersection && current_line_state == NOT_IN_INTERSECTION)
+        {
+            ++intersection_debounce_count_current;
+            if (intersection_debounce_count_current > intersection_debounce_count)
             {
-                if(last_val < MIDPOINT)
-                {   
-                    DriveControlMessage_t dcmmsg;
-                    dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
-                    dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-                    dcmmsg.actual = 2000;
-                    MsgQueuePut(&drive_ss_ao, &dcmmsg);
-                }
-                
-                else
-                {
-                    DriveControlMessage_t dcmmsg;
-                    dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
-                    dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-                    dcmmsg.actual = 3000;
-                    MsgQueuePut(&drive_ss_ao, &dcmmsg);
-                }
- 
-            } 
+                current_line_state = IN_INTERSECTION;
+                intersection_debounce_count = 0;
+            }
+        }
+        else if (!possibly_at_intersection && current_line_state == IN_INTERSECTION && previous_line_state == IN_INTERSECTION)
+        {
+            ++intersection_exit_debounce_count_current;
+            if (intersection_exit_debounce_count_current > intersection_debounce_count)
+            {
+                current_line_state = NOT_IN_INTERSECTION;
+                intersection_exit_debounce_count_current = 0;
+            }
+        }
         else
-        { */   
-            last_val = (float)avg/(float)sum;
+        {
+            intersection_exit_debounce_count_current = 0;
+            intersection_debounce_count = 0;
+        }
+
+        if (drive_control_loop_enabled)
+        {
             DriveControlMessage_t dcmmsg;
             dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
             dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-            dcmmsg.actual = (float)last_val;
-            MsgQueuePut(&drive_ss_ao, &dcmmsg);
-        //}
-        //
-        UNUSED(on_line);
-
         
-        //monitor intersection count and send message to state controller
-        if (ABOVE_LINE(sensor_values[0]) || ABOVE_LINE(sensor_values[5]))
+
+            if ((intersection_exit_debounce_count_current == 0 || intersection_debounce_count_current == 0)
+                && (current_line_state == NOT_IN_INTERSECTION && previous_line_state == NOT_IN_INTERSECTION))
+            {
+                last_val = (float)avg / (float)sum;
+            }
+            else
+            {
+                last_val = 2500;
+            }
+
+            dcmmsg.actual = last_val;
+            MsgQueuePut(&drive_ss_ao, &dcmmsg);
+        }
+
+        if (current_line_state == NOT_IN_INTERSECTION && previous_line_state == IN_INTERSECTION)
         {
             ++intersection_count_current;
         }
 
-        if (intersection_count_current > intersection_count_target)
+        if (intersection_count_current >= intersection_count_target)
         {
             Message_t ich_msg = {.id = REFARR_INTERSECTION_COUNT_HIT, .msg_size = sizeof(Message_t)};
             MsgQueuePut(line_follow_done_response, &ich_msg);
@@ -342,8 +361,8 @@ static void HandleSensorRead()
         }
 #ifdef LINE_FOLLOW_TRACE_ENABLED
         LineFollowTrace(sensor_values);
-
 #endif
+        previous_line_state = current_line_state;
     }
     
     //stop taking repeated calibration measurements of sensors
@@ -361,9 +380,6 @@ static void HandleSensorRead()
                 min_sensor_readings[i] = reading;
             }
         }
-
-
-
     }
 }
 
@@ -376,42 +392,52 @@ static void StartLineFollow(LineFollowMessage_t *msg)
     intersection_count_target = msg->intersection_count;
     line_follow_done_response = msg->response;
 
+    current_line_state = NOT_IN_INTERSECTION;
+    previous_line_state = NOT_IN_INTERSECTION;
 
-    // load "middle of the line" setpoint into drive subsystem
-    // drive control loop will use this setpoint when calculating
-    // error using the periodic actual position update from REFARR
-    DriveSetpointMessage_t sp_msg;
-    sp_msg.base.id = DRIVE_SETPOINT_MSG_ID;
-    sp_msg.base.msg_size = sizeof(DriveSetpointMessage_t);
-    sp_msg.setpoint = 2500; //middle of line
+    left_intersection_enabled = msg->mode & 0x1;
+    right_intersection_enabled = msg->mode & 0x2;
+    drive_control_loop_enabled = msg->mode >> 4;
 
-    DriveBaseVelocityMessage_t bv_msg;
-    bv_msg.base.id = DRIVE_BASE_VELOCITY_MSG_ID;
-    bv_msg.base.msg_size = sizeof(DriveBaseVelocityMessage_t);
-    bv_msg.base_velocity = msg->base_speed;
+    if (drive_control_loop_enabled)
+    {
+        // load "middle of the line" setpoint into drive subsystem
+        // drive control loop will use this setpoint when calculating
+        // error using the periodic actual position update from REFARR
+        DriveSetpointMessage_t sp_msg;
+        sp_msg.base.id = DRIVE_SETPOINT_MSG_ID;
+        sp_msg.base.msg_size = sizeof(DriveSetpointMessage_t);
+        sp_msg.setpoint = 2500; //middle of line
 
-    MsgQueuePut(&drive_ss_ao, &bv_msg);
-    MsgQueuePut(&drive_ss_ao, &sp_msg);
+        DriveBaseVelocityMessage_t bv_msg;
+        bv_msg.base.id = DRIVE_BASE_VELOCITY_MSG_ID;
+        bv_msg.base.msg_size = sizeof(DriveBaseVelocityMessage_t);
+        bv_msg.base_velocity = msg->base_speed;
+
+        MsgQueuePut(&drive_ss_ao, &bv_msg);
+        MsgQueuePut(&drive_ss_ao, &sp_msg);
     
-    TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-    SchedulerAddTimedEvent(&sensor_read_periodic_event);
-
+        TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+        SchedulerAddTimedEvent(&sensor_read_periodic_event);
+    }
 }
 
 static void StopLineFollow()
 {
     state = STATE_FUNCTIONAL;
+    
+    if (drive_control_loop_enabled)
+    {
+        DriveOpenLoopControlMessage_t olctl_msg;
+        olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+        olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+        olctl_msg.percent_left = 0.0;
+        olctl_msg.percent_right = 0.0;
 
-    DriveOpenLoopControlMessage_t olctl_msg;
-    olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-    olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-    olctl_msg.percent_left = 0.0;
-    olctl_msg.percent_right = 0.0;
-
-    MsgQueuePut(&drive_ss_ao, &olctl_msg);
-    TimedEventDisable(&sensor_read_periodic_event);
+        MsgQueuePut(&drive_ss_ao, &olctl_msg);
+        TimedEventDisable(&sensor_read_periodic_event);
+    }
 }
-
 extern void ReflectanceArrayEventHandler(Message_t* msg)
 {
 

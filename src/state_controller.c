@@ -101,6 +101,7 @@ static void HandlePickupState(Message_t *msg)
             lf_msg.response = &state_ctl_ao;
             lf_msg.base_speed = 0.25;
             lf_msg.intersection_count = destination_aisle_id;
+            lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
@@ -133,15 +134,29 @@ static void HandleToBayState(Message_t *msg)
     {
         if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
         {
-            // TODO: turn
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = -0.2;
+            olctl_msg.percent_right = 0.4;
+
+            MsgQueuePut(&drive_ss_ao, &olctl_msg);
+
+            LineFollowMessage_t lf_msg;
+            lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+            lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+            lf_msg.intersection_count = 1;
+            lf_msg.response = &state_ctl_ao;
+            lf_msg.mode = REFARR_LEFT_SENSOR_ENABLE;
+
+            MsgQueuePut(&refarr_ss_ao, &lf_msg);
             
             SetNextState(STATE_TO_BAY, STATE_TO_BAY_AISLE_TURN);
         }
     }
     else if (STATE_TO_BAY_AISLE_TURN == sub_state)
     {
-        // FIXME: if msg id is turn complete
-        if (msg->id)
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
         {
             LineFollowMessage_t lf_msg;
             lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
@@ -149,6 +164,7 @@ static void HandleToBayState(Message_t *msg)
             lf_msg.base_speed = 0.5;
             lf_msg.intersection_count = destination_bay_id;
             lf_msg.response = &state_ctl_ao;
+            lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
@@ -201,6 +217,8 @@ static void HandleDropoffState(Message_t *msg)
             lf_msg.base_speed = -0.5;
             lf_msg.intersection_count = 1;
             lf_msg.response = &state_ctl_ao;
+            lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
+
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
@@ -229,6 +247,7 @@ static void HandleDropoffState(Message_t *msg)
             lf_msg.base_speed = -0.5;
             lf_msg.intersection_count = 1;
             lf_msg.response = &state_ctl_ao;
+            lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
@@ -259,6 +278,7 @@ static void HandleReturnToIdleState(Message_t *msg)
             lf_msg.base_speed = 0.5;
             lf_msg.intersection_count = 1;
             lf_msg.response = &state_ctl_ao;
+            lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
             
             MsgQueuePut(&refarr_ss_ao, &lf_msg);
 
