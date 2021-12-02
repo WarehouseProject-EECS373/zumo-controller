@@ -56,12 +56,12 @@
 // if we ever get small output percent that's "close enough" to 0.0 but PID
 // doesn't drive to exactly 0.0
 static float deadband = 0.0;
-static uint32_t drive_control_loop_period = 45;
+static uint32_t drive_control_loop_period = 30;
 
 // position control PID constants
-static float kP = 1.0;
+static float kP = 0.0005;
 static float kI = 0.0;
-static float kD = 0.0;
+static float kD = 0.0005;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
@@ -69,7 +69,7 @@ static float base_output_percent = 0.5;
 
 // position control
 static float setpoint = 0.0;
-static float actual = 0.0;
+static float actual = 2500.0;
 static float previous_error = 0.0;
 static float last_time = 0.0;
 static float i_accumulator = 0.0;
@@ -138,6 +138,7 @@ static void PropertyHandler(PropertyGetSetMessage_t *msg)
     }
     else if (DRIVE_STATE_ID == msg->p_id)
     {
+        SetDriveState(DRIVE_STATE_DISABLED);
         GET_SET_PROPERTY(msg, state, uint32_t);
         SetDriveState(state);
     }
@@ -223,8 +224,8 @@ static void HandleTimedActivity(Message_t* msg)
     float motor_speed = kP * p + kI * i_accumulator + kD * d;
 
     // calculate left and right percent output
-    float left_output = base_output_percent + motor_speed;
-    float right_output = base_output_percent - motor_speed;
+    float left_output = base_output_percent - motor_speed;
+    float right_output = base_output_percent + motor_speed;
 
     left_output = BoundDrivePercent(left_output);
     right_output = BoundDrivePercent(right_output);
@@ -285,7 +286,7 @@ static void RampTestIteration()
 static void ClearPIDState()
 {
     setpoint = 0.0;
-    actual = 0.0;
+    actual = 2500.0;
     previous_error = 0.0;
     last_time = 0.0;
     i_accumulator = 0.0;

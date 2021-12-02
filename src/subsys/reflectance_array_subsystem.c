@@ -45,8 +45,8 @@ static uint16_t sensor_values[6];
 static uint16_t read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING,MAX_READING};
 
-static uint16_t max_sensor_readings[6] = {3017, 2578, 2250, 2469, 3025, 3744};
-static uint16_t min_sensor_readings[6] = {326, 281, 236, 250, 255, 323};
+static uint16_t max_sensor_readings[6] = {2780, 2930, 2630, 2830, 3418, 3519};
+static uint16_t min_sensor_readings[6] = {74, 81, 68, 78, 142, 153};
 
 static uint32_t last_val = 2500;
 
@@ -292,6 +292,7 @@ static void HandleSensorRead()
                 sum += val;
             }
         }
+        /*
         if (!on_line)
             {
                 if(last_val < MIDPOINT)
@@ -299,7 +300,7 @@ static void HandleSensorRead()
                     DriveControlMessage_t dcmmsg;
                     dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
                     dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-                    dcmmsg.actual = 0;
+                    dcmmsg.actual = 2000;
                     MsgQueuePut(&drive_ss_ao, &dcmmsg);
                 }
                 
@@ -308,20 +309,22 @@ static void HandleSensorRead()
                     DriveControlMessage_t dcmmsg;
                     dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
                     dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-                    dcmmsg.actual = 5000;
+                    dcmmsg.actual = 3000;
                     MsgQueuePut(&drive_ss_ao, &dcmmsg);
                 }
  
             } 
         else
-        {    
+        { */   
             last_val = (float)avg/(float)sum;
             DriveControlMessage_t dcmmsg;
             dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
             dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
             dcmmsg.actual = (float)last_val;
             MsgQueuePut(&drive_ss_ao, &dcmmsg);
-        }
+        //}
+        //
+        UNUSED(on_line);
 
         
         //monitor intersection count and send message to state controller
