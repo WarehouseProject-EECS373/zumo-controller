@@ -1,5 +1,4 @@
-#ifndef APP_DEFS_H
-#define APP_DEFS_H
+#pragma once
 
 #include <os.h>
 
@@ -129,6 +128,10 @@ typedef struct PropertyGetSetMessage_s
 #define PUSH_BUTTON_PRESSED_MSG_ID          0x61
 #define FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID   0x62
 
+#define TEST_LF_MSG_ID          0x80
+#define TEST_TURN_MSG_ID        0x81
+#define TEST_180_MSG_ID         0x82
+
 // comms subsystem
 #define UART_SMALL_PACKET_MSG_ID    0x81
 #define UART_LARGE_PACKET_MSG_ID    0x82
@@ -233,4 +236,3 @@ ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(test_ss_ao, TEST_AO_QUEUE_SIZE)
 
-#endif

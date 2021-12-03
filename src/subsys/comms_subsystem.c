@@ -24,9 +24,13 @@
 // incoming message from warehouse for dispatch
 #define MSG_DISPATCH_ID     0x1
 
-#define MSG_LINE_FOLLOWING_ID 0xD
+#define MSG_LINE_FOLLOWING_ID   0xD
+#define MSG_TURN_ID             0xE
+#define MSG_180T_ID             0xF
 
-#define EXPECTED_LINE_FOLLOW_LENGTH 15
+#define EXPECTED_LINE_FOLLOW_LENGTH 6
+#define EXPECTED_180T_LENGTH        26
+#define EXPECTED_TURN_LENGTH        14
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
@@ -144,29 +148,82 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
             return STCP_STATUS_UNDEFINED_ERROR;
         }
 
+        Message_t cfgmsg = {.id = TEST_LF_MSG_ID, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&test_ss_ao, &cfgmsg);
+
         LineFollowMessage_t lf_msg;
         lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
         lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
-        lf_msg.base_speed = *((float*) (payload + 3));
+        lf_msg.base_speed = *((float*) (payload + 2));
         lf_msg.intersection_count = payload[1];
-        lf_msg.mode = payload[2];
+        lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
-       // only care about open loop percents when turning
-       // during closed loop LF mode, this doens't matter
-       // make sure to send this message first so TestSystem
-       // can cache it before starting LF
-        if (!(lf_msg.mode >> 4))
+        MsgQueuePut(&test_ss_ao, &lf_msg);
+    }
+    else if (MSG_180T_ID == payload[MESSAGE_ID_IDX])
+    {
+        if (EXPECTED_180T_LENGTH != length)
         {
-            DriveOpenLoopControlMessage_t olctl_msg;
-            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-            olctl_msg.percent_left = *((float*) (payload + 7));
-            olctl_msg.percent_right = *((float*) (payload + 11));
+            return STCP_STATUS_UNDEFINED_ERROR;
+        }
+        Message_t cfgmsg = {.id = TEST_180_MSG_ID, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&test_ss_ao, &cfgmsg);
 
-            MsgQueuePut(&test_ss_ao, &olctl_msg);
+        DriveOpenLoopControlMessage_t rev_msg;
+        rev_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+        rev_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+        rev_msg.percent_left = *((float*)(payload + 14));
+        rev_msg.percent_right = *((float*)(payload + 14));
+
+        DriveOpenLoopControlMessage_t cached_msg;
+        cached_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+        cached_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+        cached_msg.percent_left = *((float*)(payload + 6));
+        cached_msg.percent_right = *((float*)(payload + 10));
+
+        LineFollowMessage_t lf_msg;
+        lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+        lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+        lf_msg.intersection_count = 1;
+        lf_msg.mode = payload[1];
+        lf_msg.base_speed = *((float*)(payload + 2));
+        lf_msg.response = &test_ss_ao;
+
+        DriveOpenLoopControlMessage_t post_turn_msg;
+        post_turn_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+        post_turn_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+        post_turn_msg.percent_left = *((float*)(payload + 18));
+        post_turn_msg.percent_right = *((float*)(payload + 22));
+
+        MsgQueuePut(&test_ss_ao, &cached_msg);
+        MsgQueuePut(&test_ss_ao, &lf_msg);
+        MsgQueuePut(&test_ss_ao, &post_turn_msg);
+        MsgQueuePut(&test_ss_ao, &rev_msg);
+    }
+    else if (MSG_TURN_ID == payload[MESSAGE_ID_IDX])
+    {
+        if (EXPECTED_TURN_LENGTH != length)
+        {
+            return STCP_STATUS_UNDEFINED_ERROR;
         }
 
+        Message_t cfgmsg = {.id = TEST_TURN_MSG_ID, .msg_size = sizeof(Message_t)};
+        MsgQueuePut(&test_ss_ao, &cfgmsg);
 
+        LineFollowMessage_t lf_msg;
+        lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
+        lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
+        lf_msg.base_speed = *((float*) (payload + 2));
+        lf_msg.intersection_count = 1;
+        lf_msg.mode = payload[1];
+
+        DriveOpenLoopControlMessage_t olctl_msg;
+        olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+        olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+        olctl_msg.percent_left = *((float*) (payload + 6));
+        olctl_msg.percent_right = *((float*) (payload + 10));
+
+        MsgQueuePut(&test_ss_ao, &olctl_msg);
         MsgQueuePut(&test_ss_ao, &lf_msg);
     }
 

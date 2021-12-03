@@ -38,8 +38,7 @@
 #define IN_INTERSECTION         1
 
 
-#define DRIVE_CTL_DEBOUNCE_COUNTS   2
-#define TURN_DEBOUNCE_COUNTS        12
+#define DRIVE_CTL_DEBOUNCE_COUNTS   5
 
 static TimedEventSimple_t sensor_read_periodic_event;
 static  Message_t sensor_read_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
@@ -404,10 +403,10 @@ static void StartLineFollow(LineFollowMessage_t *msg)
     right_intersection_enabled = msg->mode & REFARR_RIGHT_SENSOR_ENABLE;
     drive_control_loop_enabled = msg->mode & REFARR_DRIVE_CTL_ENABLE;
 
+    intersection_debounce_count = DRIVE_CTL_DEBOUNCE_COUNTS;
+    
     if (drive_control_loop_enabled)
     {
-        intersection_debounce_count = DRIVE_CTL_DEBOUNCE_COUNTS;
-
         // load "middle of the line" setpoint into drive subsystem
         // drive control loop will use this setpoint when calculating
         // error using the periodic actual position update from REFARR
@@ -423,10 +422,6 @@ static void StartLineFollow(LineFollowMessage_t *msg)
 
         MsgQueuePut(&drive_ss_ao, &bv_msg);
         MsgQueuePut(&drive_ss_ao, &sp_msg);
-    }
-    else
-    {
-        intersection_debounce_count = TURN_DEBOUNCE_COUNTS;
     }
     
     TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
