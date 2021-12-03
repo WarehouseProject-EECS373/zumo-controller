@@ -209,12 +209,13 @@ typedef struct PropertyGetSetMessage_s
 
 // message queue sizes
 #define HEARTBEAT_QUEUE_SIZE     1
-#define DRIVE_SS_QUEUE_SIZE      8
-#define REFARR_SS_QUEUE_SIZE     8
+#define DRIVE_SS_QUEUE_SIZE      16
+#define REFARR_SS_QUEUE_SIZE     16
 #define INPUT_CTL_SS_QUEUE_SIZE  4
 #define TEST_OBJ_QUEUE_SIZE      8
 #define COMMS_QUEUE_SIZE         8
 #define STATE_MACHINE_QUEUE_SIZE 16
+#define TEST_AO_QUEUE_SIZE       8
 
 #define WATCHDOG_AO_ID      0x0
 #define DRIVE_AO_ID         0x1
@@ -222,7 +223,7 @@ typedef struct PropertyGetSetMessage_s
 #define COMMS_AO_ID         0x3
 #define STATE_AO_ID         0x4
 #define REFARR_AO_ID        0x5
-
+#define TEST_AO_ID          0x6
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
@@ -230,5 +231,6 @@ ACTIVE_OBJECT_EXTERN(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
+ACTIVE_OBJECT_EXTERN(test_ss_ao, TEST_AO_QUEUE_SIZE)
 
 #endif

@@ -26,7 +26,7 @@
 
 #define MSG_LINE_FOLLOWING_ID 0xD
 
-#define EXPECTED_LINE_FOLLOW_LENGTH 6
+#define EXPECTED_LINE_FOLLOW_LENGTH 15
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
@@ -147,11 +147,27 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         LineFollowMessage_t lf_msg;
         lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
         lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
-        lf_msg.base_speed = *((float*) (payload + 2));
+        lf_msg.base_speed = *((float*) (payload + 3));
         lf_msg.intersection_count = payload[1];
-        lf_msg.response = &state_ctl_ao;
+        lf_msg.mode = payload[2];
 
-        MsgQueuePut(&refarr_ss_ao, &lf_msg);
+       // only care about open loop percents when turning
+       // during closed loop LF mode, this doens't matter
+       // make sure to send this message first so TestSystem
+       // can cache it before starting LF
+        if (!(lf_msg.mode >> 4))
+        {
+            DriveOpenLoopControlMessage_t olctl_msg;
+            olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            olctl_msg.percent_left = *((float*) (payload + 7));
+            olctl_msg.percent_right = *((float*) (payload + 11));
+
+            MsgQueuePut(&test_ss_ao, &olctl_msg);
+        }
+
+
+        MsgQueuePut(&test_ss_ao, &lf_msg);
     }
 
     return STCP_STATUS_SUCCESS;

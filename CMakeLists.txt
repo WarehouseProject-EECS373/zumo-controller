@@ -11,7 +11,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(OS_TRACE_ENABLED 0)
 set(LINE_FOLLOW_TRACE_ENABLED 0)
-set(DRIVE_CONTROL_LOOP_TRACE_ENABLED 1)
+set(DRIVE_CONTROL_LOOP_TRACE_ENABLED 0)
 
 add_definitions(-DSTM32F401xE)
 
@@ -53,6 +53,7 @@ set(PROJECT_SOURCES
     src/subsys/input_ctl_subsystem.c
     src/subsys/reflectance_array_subsystem.c
     src/subsys/comms_subsystem.c
+    src/subsys/test_subsystem.c
 )
 
 set(STM_SOURCES

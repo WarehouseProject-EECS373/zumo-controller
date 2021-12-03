@@ -38,6 +38,9 @@
 #define IN_INTERSECTION         1
 
 
+#define DRIVE_CTL_DEBOUNCE_COUNTS   2
+#define TURN_DEBOUNCE_COUNTS        12
+
 static TimedEventSimple_t sensor_read_periodic_event;
 static  Message_t sensor_read_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)}; 
 static TIM_HandleTypeDef htim11; //output compare no output
@@ -64,7 +67,7 @@ static uint32_t calibration_state = STATE_CALIBRATE_LEFT_TURN;
 
 static uint16_t intersection_count_target = 0;
 static uint16_t intersection_count_current = 0;
-static uint16_t intersection_debounce_count = 2;
+static uint16_t intersection_debounce_count = DRIVE_CTL_DEBOUNCE_COUNTS;
 static uint16_t intersection_debounce_count_current = 0;
 static uint16_t intersection_exit_debounce_count_current = 0;
 static uint32_t previous_line_state = NOT_IN_INTERSECTION;
@@ -305,16 +308,16 @@ static void HandleSensorRead()
         if (possibly_at_intersection && current_line_state == NOT_IN_INTERSECTION)
         {
             ++intersection_debounce_count_current;
-            if (intersection_debounce_count_current > intersection_debounce_count)
+            if (intersection_debounce_count_current >= intersection_debounce_count)
             {
                 current_line_state = IN_INTERSECTION;
-                intersection_debounce_count = 0;
+                intersection_debounce_count_current = 0;
             }
         }
         else if (!possibly_at_intersection && current_line_state == IN_INTERSECTION && previous_line_state == IN_INTERSECTION)
         {
             ++intersection_exit_debounce_count_current;
-            if (intersection_exit_debounce_count_current > intersection_debounce_count)
+            if (intersection_exit_debounce_count_current >= intersection_debounce_count)
             {
                 current_line_state = NOT_IN_INTERSECTION;
                 intersection_exit_debounce_count_current = 0;
@@ -323,7 +326,7 @@ static void HandleSensorRead()
         else
         {
             intersection_exit_debounce_count_current = 0;
-            intersection_debounce_count = 0;
+            intersection_debounce_count_current = 0;
         }
 
         if (drive_control_loop_enabled)
@@ -389,18 +392,22 @@ static void StartLineFollow(LineFollowMessage_t *msg)
     state = STATE_LINE_FOLLOWING;
 
     intersection_count_current = 0;
+    intersection_exit_debounce_count_current = 0;
+    intersection_debounce_count_current = 0;
     intersection_count_target = msg->intersection_count;
     line_follow_done_response = msg->response;
 
     current_line_state = NOT_IN_INTERSECTION;
     previous_line_state = NOT_IN_INTERSECTION;
 
-    left_intersection_enabled = msg->mode & 0x1;
-    right_intersection_enabled = msg->mode & 0x2;
-    drive_control_loop_enabled = msg->mode >> 4;
+    left_intersection_enabled = msg->mode & REFARR_LEFT_SENSOR_ENABLE;
+    right_intersection_enabled = msg->mode & REFARR_RIGHT_SENSOR_ENABLE;
+    drive_control_loop_enabled = msg->mode & REFARR_DRIVE_CTL_ENABLE;
 
     if (drive_control_loop_enabled)
     {
+        intersection_debounce_count = DRIVE_CTL_DEBOUNCE_COUNTS;
+
         // load "middle of the line" setpoint into drive subsystem
         // drive control loop will use this setpoint when calculating
         // error using the periodic actual position update from REFARR
@@ -416,27 +423,28 @@ static void StartLineFollow(LineFollowMessage_t *msg)
 
         MsgQueuePut(&drive_ss_ao, &bv_msg);
         MsgQueuePut(&drive_ss_ao, &sp_msg);
-    
-        TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
-        SchedulerAddTimedEvent(&sensor_read_periodic_event);
     }
+    else
+    {
+        intersection_debounce_count = TURN_DEBOUNCE_COUNTS;
+    }
+    
+    TimedEventSimpleCreate(&sensor_read_periodic_event, &refarr_ss_ao, &sensor_read_periodic_msg, REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD, TIMED_EVENT_PERIODIC_TYPE);
+    SchedulerAddTimedEvent(&sensor_read_periodic_event);
 }
 
 static void StopLineFollow()
 {
     state = STATE_FUNCTIONAL;
     
-    if (drive_control_loop_enabled)
-    {
-        DriveOpenLoopControlMessage_t olctl_msg;
-        olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-        olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-        olctl_msg.percent_left = 0.0;
-        olctl_msg.percent_right = 0.0;
+    DriveOpenLoopControlMessage_t olctl_msg;
+    olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+    olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+    olctl_msg.percent_left = 0.0;
+    olctl_msg.percent_right = 0.0;
 
-        MsgQueuePut(&drive_ss_ao, &olctl_msg);
-        TimedEventDisable(&sensor_read_periodic_event);
-    }
+    MsgQueuePut(&drive_ss_ao, &olctl_msg);
+    TimedEventDisable(&sensor_read_periodic_event);
 }
 extern void ReflectanceArrayEventHandler(Message_t* msg)
 {

@@ -14,6 +14,7 @@
 #include "subsys/input_ctl_subsystem.h"
 #include "subsys/reflectance_array_subsystem.h"
 #include "subsys/comms_subsystem.h"
+#include "subsys/test_subsystem.h"
 
 #include "trace.h"
 
@@ -39,6 +40,7 @@ ACTIVE_OBJECT_DECL(input_ctl_ss_ao, INPUT_CTL_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(test_ss_ao, TEST_AO_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -107,6 +109,8 @@ int main()
     REFARR_Init();
     ITCTL_Init();
     Comms_Init();
+
+    TestSystemInit();
     
     StateController_Init();
 
@@ -119,6 +123,7 @@ int main()
     AO_INIT(comms_ss_ao, 4, CommsEventHandler, COMMS_QUEUE_SIZE, COMMS_AO_ID);
     AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE, STATE_AO_ID);
     AO_INIT(refarr_ss_ao, 1, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE, REFARR_AO_ID);
+    AO_INIT(test_ss_ao, 1, TestSystemEventHandler, TEST_AO_QUEUE_SIZE, TEST_AO_ID);
 
     TimedEventSetup();
 
