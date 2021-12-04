@@ -13,6 +13,3 @@ typedef struct DelayCommand_s
 
 extern void DelayCommandInit(DelayCommand_t *cmd, uint32_t delay, Command_t *next);
 
-extern void DelayCommandStart(Command_t *cmd, void* instance_data);
-
-extern bool DelayCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);

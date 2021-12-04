@@ -5,6 +5,10 @@
 #include "state_machine.h"
 #include "drive_open_loop_cmd.h"
 
+static void Turn180CommandStart(Command_t *cmd, void* instance_data);
+static bool Turn180CommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
+static void Turn180CommandOnEnd(Command_t *cmd, void* instance_data);
+
 extern void Turn180CommandInit(Turn180Command_t *cmd, uint32_t turn_direction, uint32_t turn_type, float turn_speed, float rev_speed, uint32_t reverse_drive_time, Command_t *next)
 {
     cmd->base.on_Start = Turn180CommandStart;
@@ -21,19 +25,19 @@ extern void Turn180CommandInit(Turn180Command_t *cmd, uint32_t turn_direction, u
 
 }
 
-extern void Turn180CommandStart(Command_t *cmd, void* instance_data)
+static void Turn180CommandStart(Command_t *cmd, void* instance_data)
 {
     Turn180Command_t *tcmd = (Turn180Command_t*)cmd;
     StateMachineStart(&tcmd->state_machine, instance_data);
 }
 
-extern bool Turn180CommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
+static bool Turn180CommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
 {
     Turn180Command_t *tcmd = (Turn180Command_t*)cmd;
     return StateMachineStep(&tcmd->state_machine, msg, instance_data);
 }
 
-extern void Turn180CommandOnEnd(Command_t *cmd, void* instance_data)
+static void Turn180CommandOnEnd(Command_t *cmd, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);

@@ -4,6 +4,8 @@
 
 #include <os.h>
 
+static void DriveOpenLoopCommandStart(Command_t *cmd, void* instance_data);
+
 extern void DriveOpenLoopCommandInit(DriveOpenLoopCommand_t *cmd, float left_out, float right_out, Command_t* next)
 {
     cmd->base.on_Start = DriveOpenLoopCommandStart;
@@ -16,7 +18,7 @@ extern void DriveOpenLoopCommandInit(DriveOpenLoopCommand_t *cmd, float left_out
     cmd->right_out = right_out;
 }
 
-extern void DriveOpenLoopCommandStart(Command_t *cmd, void* instance_data)
+static void DriveOpenLoopCommandStart(Command_t *cmd, void* instance_data)
 {
     UNUSED(instance_data);
 

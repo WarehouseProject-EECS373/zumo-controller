@@ -14,5 +14,4 @@ typedef struct DriveOpenLoopCommand_s
 
 extern void DriveOpenLoopCommandInit(DriveOpenLoopCommand_t *cmd, float left_out, float right_out, Command_t* next);
 
-extern void DriveOpenLoopCommandStart(Command_t *cmd, void* instance_data);
 

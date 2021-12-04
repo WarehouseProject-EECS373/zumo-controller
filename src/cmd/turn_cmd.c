@@ -31,6 +31,10 @@ static TurnTypeDirectionCfg_t turn_type_dir_cfg[2][2] = {
     }
 };
 
+static void TurnCommandStart(Command_t *cmd, void* instance_data);
+static bool TurnCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
+static void TurnCommandOnEnd(Command_t *cmd, void* instance_data);
+
 static void ConfigureOpenLoopSpeeds(TurnTypeDirectionCfg_t *cfg, float *left_out, float *right_out, float fw_speed, float rev_speed);
 
 static void ConfigureOpenLoopSpeeds(TurnTypeDirectionCfg_t *cfg, float *left_out, float *right_out, float fw_speed, float rev_speed)
@@ -76,19 +80,19 @@ extern void TurnCommandInit(TurnCommand_t *cmd, uint32_t turn_direction, uint32_
    StateMachineInit(&cmd->state_machine, (Command_t*) &cmd->ol_drive_cmd); 
 }
 
-extern void TurnCommandStart(Command_t *cmd, void* instance_data)
+static void TurnCommandStart(Command_t *cmd, void* instance_data)
 {
     TurnCommand_t *tcmd = (TurnCommand_t*)cmd;
     StateMachineStart(&tcmd->state_machine, instance_data);
 }
 
-extern bool TurnCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
+static bool TurnCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
 {
     TurnCommand_t* tcmd = (TurnCommand_t*)cmd;
     return StateMachineStep(&tcmd->state_machine, msg, instance_data);
 }
 
-extern void TurnCommandOnEnd(Command_t *cmd, void* instance_data)
+static void TurnCommandOnEnd(Command_t *cmd, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);

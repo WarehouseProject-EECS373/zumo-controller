@@ -5,6 +5,9 @@
 #include <os.h>
 
 
+static void LineFollowCommandStart(Command_t *cmd, void *instance_data);
+static bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
+static void LineFollowCommandOnEnd(Command_t *cmd, void* instance_data);
 
 
 extern void LineFollowCommandInit(LineFollowCommand_t *cmd, uint8_t mode, uint8_t intersection_count, float base_velocity, uint32_t delay_ms, Command_t *next)
@@ -29,7 +32,7 @@ extern void LineFollowCommandInit(LineFollowCommand_t *cmd, uint8_t mode, uint8_
     cmd->lfmsg.response = &state_ctl_ao;
 }
 
-extern void LineFollowCommandStart(Command_t *cmd, void* instance_data)
+static void LineFollowCommandStart(Command_t *cmd, void* instance_data)
 {
     UNUSED(instance_data);
     
@@ -46,7 +49,7 @@ extern void LineFollowCommandStart(Command_t *cmd, void* instance_data)
     }
 }
 
-extern bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
+static bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);
@@ -54,7 +57,7 @@ extern bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* ins
     return (REFARR_INTERSECTION_COUNT_HIT == msg->id);
 }
 
-extern void LineFollowCommandOnEnd(Command_t *cmd, void *instance_data)
+static void LineFollowCommandOnEnd(Command_t *cmd, void *instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);

@@ -2,6 +2,9 @@
 
 #include "app_defs.h"
 
+static void DelayCommandStart(Command_t *cmd, void* instance_data);
+static bool DelayCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
+
 extern void DelayCommandInit(DelayCommand_t *cmd, uint32_t delay, Command_t *next)
 {
     cmd->base.on_Start = DelayCommandStart;
@@ -16,7 +19,7 @@ extern void DelayCommandInit(DelayCommand_t *cmd, uint32_t delay, Command_t *nex
     cmd->delay_msg = msg; 
 }
 
-extern void DelayCommandStart(Command_t *cmd, void* instance_data)
+static void DelayCommandStart(Command_t *cmd, void* instance_data)
 {
     UNUSED(instance_data);
 
@@ -25,7 +28,7 @@ extern void DelayCommandStart(Command_t *cmd, void* instance_data)
     SchedulerAddTimedEvent(&dcmd->delay_event);
 }
 
-extern bool DelayCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
+static bool DelayCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);
