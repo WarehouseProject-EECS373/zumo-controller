@@ -218,8 +218,12 @@ typedef struct PropertyGetSetMessage_s
 // turn configuration
 #define TURN_TYPE_FROM_BASE             0x0
 #define TURN_TYPE_FROM_TOP              0x1
+#define TURN_TYPE_180_LEFT              0x0
+#define TURN_TYPE_180_RIGHT             0x1
 #define TURN_DIR_LEFT                   0x0
 #define TURN_DIR_RIGHT                  0x1
+
+#define TIMED_EVENT_DONE_MSG_ID         0x999
 
 typedef struct Command_s Command_t;
 

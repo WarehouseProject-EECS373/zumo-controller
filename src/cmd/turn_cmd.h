@@ -27,5 +27,3 @@ extern void TurnCommandStart(Command_t *cmd, void* instance_data);
 extern bool TurnCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
 
 extern void TurnCommandOnEnd(Command_t *cmd, void* instance_data);
-
-

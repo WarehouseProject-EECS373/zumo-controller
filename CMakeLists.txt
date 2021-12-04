@@ -58,7 +58,8 @@ set(PROJECT_SOURCES
 
     src/cmd/drive_open_loop_cmd.c
     src/cmd/lf_cmd.c
-    src/cmd/turn90_cmd.c
+    src/cmd/turn_cmd.c
+    src/cmd/delay_cmd.h
 )
 
 set(STM_SOURCES
