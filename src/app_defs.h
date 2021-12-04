@@ -126,7 +126,6 @@ typedef struct PropertyGetSetMessage_s
 #define REFARR_PROCESS_READING_MSG_ID   0x3A
 
 #define PUSH_BUTTON_PRESSED_MSG_ID          0x61
-#define FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID   0x62
 
 #define TEST_LF_MSG_ID          0x80
 #define TEST_TURN_MSG_ID        0x81
@@ -158,10 +157,6 @@ typedef struct PropertyGetSetMessage_s
 
 #define GET_PROPERTY_MSG_ID     0x220
 #define SET_PROPERTY_MSG_ID     0x221
-
-// TODO: fix all message lengths, do not include end char anywhere
-// TODO: add stcp library
-
 
 #define GET_PROPERTY(var, vartype) do                       \
 {                                                           \
