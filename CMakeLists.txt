@@ -59,7 +59,10 @@ set(PROJECT_SOURCES
     src/cmd/drive_open_loop_cmd.c
     src/cmd/lf_cmd.c
     src/cmd/turn_cmd.c
-    src/cmd/delay_cmd.h
+    src/cmd/turn180_cmd.c
+    src/cmd/bay_dropoff_cmd.c
+    src/cmd/delay_cmd.c
+
 )
 
 set(STM_SOURCES
