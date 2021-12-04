@@ -112,7 +112,7 @@ static void HandlePickupState(Message_t *msg)
     }
     else if (STATE_PICKUP_DRIVE == sub_state)
     {
-        if (FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID == msg->id)
+        if (true)
         {
             // speed up after box pickup but don't stop line following yet
             DriveBaseVelocityMessage_t bv_msg;
@@ -204,7 +204,7 @@ static void HandleDropoffState(Message_t *msg)
 {
     if (STATE_BAY_DROPOFF_DRIVE == sub_state)
     {
-        if (FRONT_LIMIT_SWITCH_TRIPPED_MSG_ID == msg->id)
+        if (true)
         {
             // TODO: release electromagnet
 

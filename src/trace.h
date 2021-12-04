@@ -1,5 +1,4 @@
-#ifndef TRACE_H
-#define TRACE_H
+#pragma once
 
 #include <os.h>
 
@@ -18,4 +17,3 @@ extern void ControlLoopTrace(float left_out, float right_out, float error, float
 extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue);
 #endif
 
-#endif

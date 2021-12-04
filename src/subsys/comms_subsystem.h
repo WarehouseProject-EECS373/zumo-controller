@@ -1,5 +1,4 @@
-#ifndef COMMS_SUBSYS_H
-#define COMMS_SUBSYS_H
+#pragma once
 
 #include <os.h>
 #include <stcp.h>
@@ -14,4 +13,3 @@ extern void CommsEventHandler(Message_t *msg);
 extern void DebugPrint(uint8_t ao_id, uint32_t msg_id, uint8_t is_queue);
 #endif
 
-#endif

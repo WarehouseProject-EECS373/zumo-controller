@@ -5,6 +5,13 @@
 // share os with all
 extern OS_t os;
 
+
+//*****************************************************************/
+// Global constants 
+//*****************************************************************/
+
+#define LINE_FOLLOW_MAX_BASE_VELOCITY   0.40
+
 //*****************************************************************/
 // Custom Messages
 //*****************************************************************/
@@ -199,6 +206,31 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_SETPOINT_ID           0x7
 #define DRIVE_ACTUAL_ID             0x8
 #define DRIVE_I_ZONE_ID             0x9
+
+
+//*****************************************************************/
+// Commands 
+//*****************************************************************/
+
+#define COMMAND_ON_END_INSTANT          0x0
+#define COMMAND_ON_END_WAIT_FOR_END     0x1
+
+// turn configuration
+#define TURN_TYPE_FROM_BASE             0x0
+#define TURN_TYPE_FROM_TOP              0x1
+#define TURN_DIR_LEFT                   0x0
+#define TURN_DIR_RIGHT                  0x1
+
+typedef struct Command_s Command_t;
+
+struct Command_s
+{
+   void (*on_Start)(Command_t* cmd, void* instance_data);
+   bool (*on_Message)(Command_t* cmd, Message_t* msg, void* instance_data);
+   void (*on_End)(Command_t* cmd, void* instance_data);
+   uint32_t end_behavior;
+   Command_t* next;
+};
 
 
 //*****************************************************************/

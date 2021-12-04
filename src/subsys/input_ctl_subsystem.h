@@ -1,5 +1,4 @@
-#ifndef UI_SUBSYSTEM_H
-#define UI_SUBSYSTEM_H
+#pragma once
 
 #include <os.h>
 
@@ -21,4 +20,3 @@ extern void ITCTL_Init();
  */
 extern void InputEventHandler(Message_t*);
 
-#endif
