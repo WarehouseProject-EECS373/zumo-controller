@@ -1,6 +1,6 @@
 #include "bay_dropoff_cmd.h"
 
-#define TURN_SPEED_FW  0.45
+#define TURN_SPEED_FW  0.55
 #define TURN_SPEED_REV -0.6
 
 #define TURN_AROUND_SPEED  0.5

@@ -13,9 +13,14 @@
 #include "cmd/turn_cmd.h"
 #include "cmd/bay_dropoff_cmd.h"
 
-#define TURN_SPEED_FW  0.45
+#define IDLE_STATE          0x1
+#define DISPATCHED_STATE    0x2
+
+#define TURN_SPEED_FW  0.55
 #define TURN_SPEED_REV -0.6
 #define MAX_BAY_COUNT  3
+
+static uint32_t state = IDLE_STATE;
 
 static StateMachine_t state_machine;
 
@@ -44,7 +49,7 @@ static void HandleDisptach(DispatchMessage_t* msg)
     if (1 == aisle_id)
     {
         // stop at first intersection
-        uint8_t leave_idle_intersection_count = 1;
+       uint8_t leave_idle_intersection_count = 1;
 
         // line follow until first intersection
         LineFollowCommandInit(&leave_idle_lf_cmd, lf_mode, leave_idle_intersection_count,
@@ -56,7 +61,7 @@ static void HandleDisptach(DispatchMessage_t* msg)
 
         // dropoff, drive until last intersection in aisle (remaining bays + 1 for exit
         // intersection)
-        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 1,
+        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id,  2 - bay_index + 1,
                               (Command_t*)&aisle_1_leave_cmd);
 
         // start turn, then drive until idle position
@@ -74,10 +79,11 @@ static void HandleDisptach(DispatchMessage_t* msg)
 
         // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for
         // idle position)
-        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 2, NULL);
+        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, 4 - bay_index + 2, NULL);
     }
 
     StateMachineInit(&state_machine, (Command_t*)&leave_idle_lf_cmd);
+    StateMachineStart(&state_machine, NULL);
 }
 
 extern void StateController_Init()
@@ -86,14 +92,25 @@ extern void StateController_Init()
 
 extern void StateControllerEventHandler(Message_t* msg)
 {
-    if (SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
+    if (IDLE_STATE == state && SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
     {
+        state = DISPATCHED_STATE;
         HandleDisptach((DispatchMessage_t*)msg);
     }
     else
     {
         // if message comes to state machine and it's not a dispatch, send it to state machine
         // SM will handle message using current command
-        StateMachineStep(&state_machine, msg, NULL);
+        if (StateMachineStep(&state_machine, msg, NULL))
+        {
+            state = IDLE_STATE;
+            DriveOpenLoopControlMessage_t stop_msg;
+            stop_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+            stop_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+            stop_msg.percent_left = 0.0;
+            stop_msg.percent_right = 0.0;
+
+            MsgQueuePut(&drive_ss_ao, &stop_msg);
+        }
     }
 }

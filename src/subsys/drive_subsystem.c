@@ -61,9 +61,9 @@ static float    deadband = 0.0;
 static uint32_t drive_control_loop_period = 5;
 
 // position control PID constants
-static float kP = 0.0018;
-static float kI = 0.00001;
-static float kD = 0.0065;
+static float kP = 0.0004;
+static float kI = 0.000032;
+static float kD = 0.0007;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
@@ -75,7 +75,7 @@ static float actual = 2500.0;
 static float previous_error = 0.0;
 static float last_time = 0.0;
 static float i_accumulator = 0.0;
-static float i_zone = 1500.0;
+static float i_zone = 800.0;
 
 // drive subsystem state
 static uint32_t state = DRIVE_STATE_DISABLED;

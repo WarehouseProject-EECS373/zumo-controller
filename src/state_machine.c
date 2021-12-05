@@ -12,6 +12,11 @@ extern void StateMachineInit(StateMachine_t* sm, Command_t* start)
 
 extern void StateMachineStart(StateMachine_t* sm, void* instance_data)
 {
+    if (!sm)
+    {
+        return;
+    }
+
     sm->current->on_Start(sm->current, instance_data);
 
     // instant commands hanve no steps involved
