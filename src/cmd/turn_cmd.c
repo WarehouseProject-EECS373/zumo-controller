@@ -1,4 +1,4 @@
-#include "Turn_cmd.h"
+#include "turn_cmd.h"
 
 #include "lf_cmd.h"
 #include "drive_open_loop_cmd.h"
@@ -26,7 +26,7 @@ static TurnTypeDirectionCfg_t turn_type_dir_cfg[2][2] = {
         {TURN_DIR_LEFT, REFARR_RIGHT_SENSOR_ENABLE}
     },
     {
-        {TURN_DIR_LEFT, REFARR_RIGHT_SENSOR_ENABLE},
+        {TURN_DIR_RIGHT, REFARR_RIGHT_SENSOR_ENABLE},
         {TURN_DIR_RIGHT, REFARR_LEFT_SENSOR_ENABLE}
     }
 };

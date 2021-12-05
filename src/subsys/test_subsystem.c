@@ -19,6 +19,7 @@
 #define TEST_STATE_LF_TURN_DRIVE_OUT    0x12
 
 #define TEST_STATE_180T_TURN            0x22
+#define TEST_STATE_180T_DRIVE_OUT       0x23
 
 #define LF_TURN_DELAY 10
 
@@ -206,8 +207,16 @@ static void Handle180Turn(Message_t *msg)
         if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
         {
             StartDelayedLF(LF_TURN_DELAY);
+            test_sub_state = TEST_STATE_180T_DRIVE_OUT;
+        }
+    }
+    else if (TEST_STATE_180T_DRIVE_OUT == test_sub_state)
+    {
+        if (REFARR_INTERSECTION_COUNT_HIT == msg->id)
+        {
             test_state = TEST_STATE_INIT;
             test_sub_state = TEST_STATE_INIT;
+            StopDrive();
         }
     }
 }

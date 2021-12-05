@@ -432,13 +432,7 @@ static void StopLineFollow()
 {
     state = STATE_FUNCTIONAL;
     
-    DriveOpenLoopControlMessage_t olctl_msg;
-    olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-    olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-    olctl_msg.percent_left = 0.0;
-    olctl_msg.percent_right = 0.0;
 
-    MsgQueuePut(&drive_ss_ao, &olctl_msg);
     TimedEventDisable(&sensor_read_periodic_event);
 }
 extern void ReflectanceArrayEventHandler(Message_t* msg)
