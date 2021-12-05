@@ -8,13 +8,11 @@
 static uint8_t write_payload_buffer[MAX_PAYLOAD_LENGTH];
 static uint8_t read_payload_buffer[MAX_PAYLOAD_LENGTH];
 
+static uint8_t* UnEscape(uint8_t* buffer, uint16_t* size);
 
-static uint8_t *UnEscape(uint8_t *buffer, uint16_t *size);
+static uint8_t* Escape(uint8_t* buffer, uint16_t* size);
 
-static uint8_t *Escape(uint8_t *buffer, uint16_t *size);
-
-
-extern uint32_t Crc32(uint8_t *buffer, uint16_t size)
+extern uint32_t Crc32(uint8_t* buffer, uint16_t size)
 {
     uint32_t crc = 0xFFFFFFFF;
     uint32_t mask = 0;
@@ -32,7 +30,7 @@ extern uint32_t Crc32(uint8_t *buffer, uint16_t size)
     return ~crc;
 }
 
-static uint8_t *Escape(uint8_t *buffer, uint16_t *size)
+static uint8_t* Escape(uint8_t* buffer, uint16_t* size)
 {
     uint16_t output_idx = 0;
 
@@ -56,7 +54,7 @@ static uint8_t *Escape(uint8_t *buffer, uint16_t *size)
     return write_payload_buffer;
 }
 
-static uint8_t *UnEscape(uint8_t *buffer, uint16_t *size)
+static uint8_t* UnEscape(uint8_t* buffer, uint16_t* size)
 {
     uint16_t output_idx = 0;
 
@@ -78,15 +76,15 @@ static uint8_t *UnEscape(uint8_t *buffer, uint16_t *size)
     return read_payload_buffer;
 }
 
-extern STCPStatus_t StcpWrite(STCPEngineHandler_t instance, uint8_t *buffer, uint16_t size)
+extern STCPStatus_t StcpWrite(STCPEngineHandler_t instance, uint8_t* buffer, uint16_t size)
 {
-    uint8_t *escaped_buffer = Escape(buffer, &size);
+    uint8_t*     escaped_buffer = Escape(buffer, &size);
     STCPStatus_t status = instance->callbacks.Send(escaped_buffer, size, instance->instance_data);
 
     return status;
 }
 
-extern STCPStatus_t StcpHandleMessage(STCPEngineHandler_t instance, uint8_t *buffer, uint16_t size)
+extern STCPStatus_t StcpHandleMessage(STCPEngineHandler_t instance, uint8_t* buffer, uint16_t size)
 {
     buffer = UnEscape(buffer, &size);
     STCPStatus_t status = instance->callbacks.HandleMessage(buffer, size, instance->instance_data);

@@ -43,9 +43,9 @@
 #define DRIVE_STATE_ENABLED  1
 
 // drive modes
-#define DRIVE_MODE_DRIVE        0x0
-#define DRIVE_MODE_ROTATE       0x1
-#define DRIVE_MODE_CALIBRATE    0x2
+#define DRIVE_MODE_DRIVE     0x0
+#define DRIVE_MODE_ROTATE    0x1
+#define DRIVE_MODE_CALIBRATE 0x2
 
 // change to fix hardware orientation (e.g. motor installed backwards)
 #define LEFT_MOTOR_ORIENTATION  1
@@ -55,16 +55,15 @@
 #define MAX_DRIVE_PERCENT 1.0
 #define MIN_DRIVE_PERCENT -1.0
 
-
 // if we ever get small output percent that's "close enough" to 0.0 but PID
 // doesn't drive to exactly 0.0
-static float deadband = 0.0;
+static float    deadband = 0.0;
 static uint32_t drive_control_loop_period = 5;
 
 // position control PID constants
-static float kP = 0.0018;
-static float kI = 0.00001;
-static float kD = 0.0065;
+static float kP = 0.0004;
+static float kI = 0.000032;
+static float kD = 0.0007;
 
 // "target" speed when driving straight,
 // PID will add/subtract from this for right/left motor to turn
@@ -76,7 +75,7 @@ static float actual = 2500.0;
 static float previous_error = 0.0;
 static float last_time = 0.0;
 static float i_accumulator = 0.0;
-static float i_zone = 1500.0;
+static float i_zone = 800.0;
 
 // drive subsystem state
 static uint32_t state = DRIVE_STATE_DISABLED;
@@ -87,12 +86,12 @@ static TIM_HandleTypeDef motor_pwm_right;
 static TIM_HandleTypeDef motor_pwm_left;
 
 static TimedEventSimple_t drive_control_loop_periodic_event;
-static Message_t drive_control_loop_periodic_msg = {.id = DRIVE_PERIODIC_EVENT_MSG_ID, .msg_size = sizeof(Message_t)};
+static Message_t          drive_control_loop_periodic_msg = {.id = DRIVE_PERIODIC_EVENT_MSG_ID,
+                                                             .msg_size = sizeof(Message_t)};
 
 static TimedEventSimple_t current_timed_event_loopback;
 static TimedEventSimple_t current_timed_event_response;
-static Message_t current_timed_event_msg;
-
+static Message_t          current_timed_event_msg;
 
 static void HandleStartTimedTurn(DriveTimedTurn_t* msg);
 static void HandleTimedActivity(Message_t* msg);
@@ -112,9 +111,9 @@ static void ClearPIDState();
 static void ConfigureGPIO();
 static void ConfigureTimer();
 
-static void PropertyHandler(PropertyGetSetMessage_t *msg);
+static void PropertyHandler(PropertyGetSetMessage_t* msg);
 
-static void PropertyHandler(PropertyGetSetMessage_t *msg)
+static void PropertyHandler(PropertyGetSetMessage_t* msg)
 {
     if (DRIVE_DEADBAND_ID == msg->p_id)
     {
@@ -170,11 +169,11 @@ static void PropertyHandler(PropertyGetSetMessage_t *msg)
  */
 static float BoundDrivePercent(float output)
 {
-    if(output > MAX_DRIVE_PERCENT)
+    if (output > MAX_DRIVE_PERCENT)
     {
         return MAX_DRIVE_PERCENT;
     }
-    else if(output < MIN_DRIVE_PERCENT)
+    else if (output < MIN_DRIVE_PERCENT)
     {
         return MIN_DRIVE_PERCENT;
     }
@@ -194,7 +193,7 @@ static float BoundDrivePercent(float output)
 static float ApplyDriveDeadband(float value)
 {
     // TODO: make generic to accept and target, not just 0.0
-    if(value < deadband && value > -1 * deadband)
+    if (value < deadband && value > -1 * deadband)
     {
         return 0.0;
     }
@@ -215,7 +214,7 @@ static void HandleTimedActivity(Message_t* msg)
 
     if (last_time < 1)
     {
-        last_time = (float) OSGetTime();
+        last_time = (float)OSGetTime();
     }
 
     float current_time = (float)OSGetTime();
@@ -264,10 +263,10 @@ static void RampTestIteration()
     static float left = MIN_DRIVE_PERCENT;
     static float right = MIN_DRIVE_PERCENT;
     static float iter_step = 0.1;
-    static bool done = false;
+    static bool  done = false;
 
     // do nothing if done with test
-    if(done)
+    if (done)
     {
         SetOutoutPercent(0.0, 0.0);
         return;
@@ -278,14 +277,14 @@ static void RampTestIteration()
     // step left until left is at max
     left += iter_step;
 
-    if(left > MAX_DRIVE_PERCENT)
+    if (left > MAX_DRIVE_PERCENT)
     {
         right += iter_step;
         left = MIN_DRIVE_PERCENT;
     }
 
     // done with test once right is max
-    if(right > MAX_DRIVE_PERCENT)
+    if (right > MAX_DRIVE_PERCENT)
     {
         left = 0.0;
         right = 0.0;
@@ -321,7 +320,9 @@ static void HandleSetpointChange(DriveSetpointMessage_t* msg)
 
     if (!drive_control_loop_periodic_event.active)
     {
-        TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao, &drive_control_loop_periodic_msg, drive_control_loop_period, TIMED_EVENT_PERIODIC_TYPE);
+        TimedEventSimpleCreate(&drive_control_loop_periodic_event, &drive_ss_ao,
+                               &drive_control_loop_periodic_msg, drive_control_loop_period,
+                               TIMED_EVENT_PERIODIC_TYPE);
         SchedulerAddTimedEvent(&drive_control_loop_periodic_event);
     }
 
@@ -337,7 +338,7 @@ static void HandleSetpointChange(DriveSetpointMessage_t* msg)
  */
 static void SetDriveState(uint32_t new_state)
 {
-    if(DRIVE_STATE_DISABLED == new_state)
+    if (DRIVE_STATE_DISABLED == new_state)
     {
         SetOutoutPercent(0.0, 0.0);
     }
@@ -352,7 +353,7 @@ static void SetDriveState(uint32_t new_state)
  */
 static void ToggleDriveState()
 {
-    if(state == DRIVE_STATE_DISABLED)
+    if (state == DRIVE_STATE_DISABLED)
     {
         SetDriveState(DRIVE_STATE_ENABLED);
     }
@@ -365,23 +366,25 @@ static void ToggleDriveState()
 static void HandleStartTimedTurn(DriveTimedTurn_t* msg)
 {
     // for timed turn, create two single shot timed events
-    // send to 
+    // send to
     // - requesting AO
     // - drive event handler (to stop turn)
 
-    DriveTimedTurn_t *ttmsg = (DriveTimedTurn_t*)msg;
+    DriveTimedTurn_t* ttmsg = (DriveTimedTurn_t*)msg;
 
     current_timed_event_msg.id = DRIVE_TIMED_TURN_DONE_MSG_ID;
     current_timed_event_msg.msg_size = sizeof(Message_t);
 
     // create timed events
-    TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
-    TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg, ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+    TimedEventSimpleCreate(&current_timed_event_loopback, &drive_ss_ao, &current_timed_event_msg,
+                           ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
+    TimedEventSimpleCreate(&current_timed_event_response, ttmsg->response, &current_timed_event_msg,
+                           ttmsg->time, TIMED_EVENT_SINGLE_TYPE);
 
-        // schedule timed events
+    // schedule timed events
     SchedulerAddTimedEvent(&current_timed_event_loopback);
     SchedulerAddTimedEvent(&current_timed_event_response);
-        
+
     // start drive
     if (DRIVE_TURN_DIR_LEFT == ttmsg->direction)
     {
@@ -440,7 +443,7 @@ extern void DriveEventHandler(Message_t* msg)
     }
     else if (DRIVE_OPEN_LOOP_MSG_ID == msg->id)
     {
-        DriveOpenLoopControlMessage_t *cmsg = (DriveOpenLoopControlMessage_t*)msg;
+        DriveOpenLoopControlMessage_t* cmsg = (DriveOpenLoopControlMessage_t*)msg;
 
         drive_mode = DRIVE_MODE_OPEN_LOOP;
         TimedEventDisable(&drive_control_loop_periodic_event);
@@ -548,7 +551,7 @@ extern void Drive_Init()
 static void SetOutoutPercent(float left_percent_output, float right_percent_output)
 {
     // don't set if drive isn't enabled
-    if(state == DRIVE_STATE_DISABLED)
+    if (state == DRIVE_STATE_DISABLED)
     {
         return;
     }
@@ -565,7 +568,7 @@ static void SetOutoutPercent(float left_percent_output, float right_percent_outp
     right_percent_output = ApplyDriveDeadband(right_percent_output);
 
     // set motor directions
-    if(left_percent_output < 0.0)
+    if (left_percent_output < 0.0)
     {
         left_percent_output *= -1;
         HAL_GPIO_WritePin(LEFT_DIR_PORT, LEFT_DIR_PIN, 1);
@@ -575,7 +578,7 @@ static void SetOutoutPercent(float left_percent_output, float right_percent_outp
         HAL_GPIO_WritePin(LEFT_DIR_PORT, LEFT_DIR_PIN, GPIO_PIN_RESET);
     }
 
-    if(right_percent_output < 0.0)
+    if (right_percent_output < 0.0)
     {
         right_percent_output *= -1;
         HAL_GPIO_WritePin(RIGHT_DIR_PORT, RIGHT_DIR_PIN, 1);
@@ -592,4 +595,3 @@ static void SetOutoutPercent(float left_percent_output, float right_percent_outp
     HAL_TIM_PWM_Start(&motor_pwm_left, LEFT_PWM_CHANNEL);
     HAL_TIM_PWM_Start(&motor_pwm_right, RIGHT_PWM_CHANNEL);
 }
-

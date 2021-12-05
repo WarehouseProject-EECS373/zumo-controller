@@ -17,16 +17,16 @@
 #define UART_RX_BUFFER_SIZE 32
 
 // byte indexes in buffer
-#define MESSAGE_ID_IDX      0
-#define AISLE_ID_IDX        1
-#define BAY_ID_IDX          2
+#define MESSAGE_ID_IDX 0
+#define AISLE_ID_IDX   1
+#define BAY_ID_IDX     2
 
 // incoming message from warehouse for dispatch
-#define MSG_DISPATCH_ID     0x1
+#define MSG_DISPATCH_ID 0x1
 
-#define MSG_LINE_FOLLOWING_ID   0xD
-#define MSG_TURN_ID             0xE
-#define MSG_180T_ID             0xF
+#define MSG_LINE_FOLLOWING_ID 0xD
+#define MSG_TURN_ID           0xE
+#define MSG_180T_ID           0xF
 
 #define EXPECTED_LINE_FOLLOW_LENGTH 6
 #define EXPECTED_180T_LENGTH        26
@@ -34,7 +34,6 @@
 #define EXPECTED_DISPATCH_LENGTH    3
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
-
 
 STCPEngine_t stcp_engine;
 
@@ -45,11 +44,11 @@ STCPEngine_t stcp_engine;
 
 UART_HandleTypeDef uart_handle;
 
-static volatile uint8_t rx_buffer[UART_RX_BUFFER_SIZE];
+static volatile uint8_t  rx_buffer[UART_RX_BUFFER_SIZE];
 static volatile uint32_t rx_buffer_count = 0;
 
-static void ProcessSmallMessage(UartSmallPacketMessage_t* msg);
-static void ProcessLargeMessage(UartLargePacketMessage_t* msg);
+static void         ProcessSmallMessage(UartSmallPacketMessage_t* msg);
+static void         ProcessLargeMessage(UartLargePacketMessage_t* msg);
 static STCPStatus_t SendMessage(void* buffer, uint16_t length, void* instance_data);
 static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_data);
 
@@ -58,19 +57,20 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
     OS_ISR_ENTER();
 
     // if RX buffer Not Empty (RXNE)
-    if(__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
+    if (__HAL_UART_GET_IT_SOURCE(&uart_handle, UART_IT_RXNE) != RESET)
     {
         // add byte in UART data register to rx buffer
         rx_buffer[rx_buffer_count++] = (uint8_t)(USART6->DR & 0xFF);
-        
+
         if (rx_buffer_count == 1 && rx_buffer[0] != HEADER)
         {
             rx_buffer_count = 0;
         }
 
         // all incoming packets are terminated by 2 FOOTER characters
-        if(rx_buffer_count > 2 && (UART_RX_BUFFER_SIZE <= rx_buffer_count || (rx_buffer[rx_buffer_count
-         - 1] == FOOTER && rx_buffer[rx_buffer_count - 2] == FOOTER)))
+        if (rx_buffer_count > 2 &&
+            (UART_RX_BUFFER_SIZE <= rx_buffer_count || (rx_buffer[rx_buffer_count - 1] == FOOTER &&
+                                                        rx_buffer[rx_buffer_count - 2] == FOOTER)))
         {
             // don't fill or modify buffer while unpacking it
             DISABLE_INTERRUPTS();
@@ -88,7 +88,7 @@ __attribute__((__interrupt__)) extern void USART6_IRQHandler()
 
 static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_data)
 {
-    uint8_t *payload = (uint8_t*)buffer;
+    uint8_t* payload = (uint8_t*)buffer;
     UNUSED(instance_data);
     if (MSG_DISPATCH_ID == payload[MESSAGE_ID_IDX])
     {
@@ -115,7 +115,7 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         PropertyGetSetMessage_t msg;
         msg.base.id = GET_PROPERTY_MSG_ID;
         msg.base.msg_size = sizeof(PropertyGetSetMessage_t);
-        msg.p_id = *((uint16_t *)(payload + 1));
+        msg.p_id = *((uint16_t*)(payload + 1));
 
         if (msg.p_id <= DRIVE_PROPERTY_MAX_ID)
         {
@@ -132,8 +132,8 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         PropertyGetSetMessage_t msg;
         msg.base.id = SET_PROPERTY_MSG_ID;
         msg.base.msg_size = sizeof(PropertyGetSetMessage_t);
-        msg.p_id = *((uint16_t *)(payload + 1));
-        
+        msg.p_id = *((uint16_t*)(payload + 1));
+
         os_memcpy(msg.value, (void*)(payload + 3), 4);
 
         if (msg.p_id <= DRIVE_PROPERTY_MAX_ID)
@@ -154,9 +154,10 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         LineFollowMessage_t lf_msg;
         lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
         lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
-        lf_msg.base_speed = *((float*) (payload + 2));
+        lf_msg.base_speed = *((float*)(payload + 2));
         lf_msg.intersection_count = payload[1];
-        lf_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
+        lf_msg.mode =
+            REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
         MsgQueuePut(&test_ss_ao, &lf_msg);
     }
@@ -213,15 +214,15 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         LineFollowMessage_t lf_msg;
         lf_msg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
         lf_msg.base.msg_size = sizeof(LineFollowMessage_t);
-        lf_msg.base_speed = *((float*) (payload + 2));
+        lf_msg.base_speed = *((float*)(payload + 2));
         lf_msg.intersection_count = 1;
         lf_msg.mode = payload[1];
 
         DriveOpenLoopControlMessage_t olctl_msg;
         olctl_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
         olctl_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-        olctl_msg.percent_left = *((float*) (payload + 6));
-        olctl_msg.percent_right = *((float*) (payload + 10));
+        olctl_msg.percent_left = *((float*)(payload + 6));
+        olctl_msg.percent_right = *((float*)(payload + 10));
 
         MsgQueuePut(&test_ss_ao, &olctl_msg);
         MsgQueuePut(&test_ss_ao, &lf_msg);
@@ -229,7 +230,6 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
 
     return STCP_STATUS_SUCCESS;
 }
-
 
 extern void Comms_Init()
 {
@@ -269,11 +269,13 @@ extern void Comms_Init()
 
 extern void CommsEventHandler(Message_t* msg)
 {
-    if(UART_SMALL_PACKET_MSG_ID == msg->id || OS_DEBUG_MSG_ID == msg->id || DRIVE_CTL_TRACE_INIT_MSG_ID == msg->id)
+    if (UART_SMALL_PACKET_MSG_ID == msg->id || OS_DEBUG_MSG_ID == msg->id ||
+        DRIVE_CTL_TRACE_INIT_MSG_ID == msg->id)
     {
         ProcessSmallMessage((UartSmallPacketMessage_t*)msg);
     }
-    else if(UART_LARGE_PACKET_MSG_ID == msg->id || LINE_FOLLOW_TRACE_MSG_ID == msg->id || DRIVE_CTL_TRACE_MSG_ID == msg->id)
+    else if (UART_LARGE_PACKET_MSG_ID == msg->id || LINE_FOLLOW_TRACE_MSG_ID == msg->id ||
+             DRIVE_CTL_TRACE_MSG_ID == msg->id)
     {
         ProcessLargeMessage((UartLargePacketMessage_t*)msg);
     }
@@ -298,4 +300,3 @@ static STCPStatus_t SendMessage(void* buffer, uint16_t length, void* instance_da
 
     return STCP_STATUS_SUCCESS;
 }
-

@@ -1,5 +1,4 @@
-#ifndef WATCHDOG_AO_H
-#define WATCHDOG_AO_H
+#pragma once
 
 #include <os.h>
 
@@ -15,5 +14,3 @@ extern void Watchdog_Init();
  * @param msg
  */
 extern void WatchdogEventHandler(Message_t* msg);
-
-#endif

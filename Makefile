@@ -1,5 +1,5 @@
-all : clean build debug flash
-.PHONY: clean build debug flash
+all : clean build debug flash format
+.PHONY: clean build debug flash format
 
 fullclean :
 	rm -rf build/ debug/
@@ -17,3 +17,6 @@ debug :
 flash :
 	st-flash write debug/zumo-controller.bin 0x08000000
 	st-flash reset
+
+format:
+	./tools/format.sh

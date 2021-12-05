@@ -1,5 +1,4 @@
-#ifndef RMK_HAL_CLOCK_CFG_H
-#define RMK_HAL_CLOCK_CFG_H
+#pragma once
 
 #include <stdint.h>
 #include <stm/stm32f4xx.h>
@@ -38,5 +37,3 @@ extern HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority);
  *
  */
 extern void Clock_Init();
-
-#endif

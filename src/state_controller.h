@@ -1,5 +1,4 @@
-#ifndef STATE_CONTROLLER_H
-#define STATE_CONTROLLER_H
+#pragma once
 
 #include <os.h>
 
@@ -7,8 +6,4 @@
 
 extern void StateController_Init();
 
-extern void StateControllerEventHandler(Message_t *msg);
-
-
-#endif
-
+extern void StateControllerEventHandler(Message_t* msg);

@@ -1,5 +1,4 @@
-#ifndef DRIVE_SUBSYSTEM_H
-#define DRIVE_SUBSYSTEM_H
+#pragma once
 
 #include <os.h>
 
@@ -15,5 +14,3 @@ extern void Drive_Init();
  * @param msg
  */
 extern void DriveEventHandler(Message_t* msg);
-
-#endif

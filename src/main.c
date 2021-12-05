@@ -26,7 +26,7 @@
 // Periodic Timing Definitions
 //*****************************************************************/
 
-#define HEARTBEAT_PERIOD               500
+#define HEARTBEAT_PERIOD 500
 
 //*****************************************************************/
 // Active Object Declarations and Configuration
@@ -51,7 +51,7 @@ extern OS_t os;
 //*****************************************************************/
 
 static TimedEventSimple_t hb_event;
-static Message_t hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)};
+static Message_t          hb_msg = {.id = HEARTBEAT_MSG_ID, .msg_size = sizeof(Message_t)};
 
 static void TimedEventSetup();
 
@@ -109,7 +109,7 @@ int main()
     Comms_Init();
 
     TestSystemInit();
-    
+
     StateController_Init();
 
     // start subsystems
