@@ -37,4 +37,3 @@ extern HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority);
  *
  */
 extern void Clock_Init();
-

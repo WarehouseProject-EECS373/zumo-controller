@@ -45,10 +45,12 @@ static TIM_HandleTypeDef  htim11; // output compare no output
 static TIM_HandleTypeDef  htim4; // input capture
 static TIM_HandleTypeDef  htim5; // input capture
 static GPIO_InitTypeDef   gpioc = {0};
-UART_HandleTypeDef        huart2;
-static uint16_t           sensor_values[6];
-static uint16_t           read_buffer[6];
-static const uint16_t     default_vals[6] = {MAX_READING, MAX_READING, MAX_READING,
+
+UART_HandleTypeDef huart2;
+
+static uint16_t       sensor_values[6];
+static uint16_t       read_buffer[6];
+static const uint16_t default_vals[6] = {MAX_READING, MAX_READING, MAX_READING,
                                          MAX_READING, MAX_READING, MAX_READING};
 
 static uint16_t max_sensor_readings[6] = {2881, 3532, 2420, 2440, 2910, 3310};
