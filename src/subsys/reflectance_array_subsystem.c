@@ -347,7 +347,7 @@ static void HandleSensorRead()
             DriveControlMessage_t dcmmsg;
             dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
             dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
-            
+
             if (!possibly_at_intersection)
             {
                 last_val = (float)avg / (float)sum;

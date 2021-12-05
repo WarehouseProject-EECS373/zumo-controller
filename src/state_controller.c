@@ -13,8 +13,8 @@
 #include "cmd/turn_cmd.h"
 #include "cmd/bay_dropoff_cmd.h"
 
-#define IDLE_STATE          0x1
-#define DISPATCHED_STATE    0x2
+#define IDLE_STATE       0x1
+#define DISPATCHED_STATE 0x2
 
 #define TURN_SPEED_FW  0.55
 #define TURN_SPEED_REV -0.6
@@ -49,7 +49,7 @@ static void HandleDisptach(DispatchMessage_t* msg)
     if (1 == aisle_id)
     {
         // stop at first intersection
-       uint8_t leave_idle_intersection_count = 1;
+        uint8_t leave_idle_intersection_count = 1;
 
         // line follow until first intersection
         LineFollowCommandInit(&leave_idle_lf_cmd, lf_mode, leave_idle_intersection_count,
@@ -61,7 +61,7 @@ static void HandleDisptach(DispatchMessage_t* msg)
 
         // dropoff, drive until last intersection in aisle (remaining bays + 1 for exit
         // intersection)
-        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id,  2 - bay_index + 1,
+        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, 2 - bay_index + 1,
                               (Command_t*)&aisle_1_leave_cmd);
 
         // start turn, then drive until idle position

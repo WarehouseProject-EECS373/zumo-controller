@@ -22,7 +22,8 @@ extern void Turn180CommandInit(Turn180Command_t* cmd, uint32_t turn_direction, u
     DriveOpenLoopCommandInit(&cmd->rev_drive_cmd, rev_speed, rev_speed,
                              (Command_t*)&cmd->rev_drive_delay_cmd);
     DelayCommandInit(&cmd->rev_drive_delay_cmd, reverse_drive_time, (Command_t*)&cmd->turn180_cmd);
-    TurnCommandInit(&cmd->turn180_cmd, turn_direction, 1, turn_type, turn_speed, -1 * turn_speed, NULL);
+    TurnCommandInit(&cmd->turn180_cmd, turn_direction, 1, turn_type, turn_speed, -1 * turn_speed,
+                    NULL);
 
     StateMachineInit(&cmd->state_machine, (Command_t*)&cmd->rev_drive_cmd);
 }
