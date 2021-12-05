@@ -20,7 +20,7 @@ extern void StateMachineStart(StateMachine_t *sm, void *instance_data)
     if (COMMAND_ON_END_INSTANT == sm->current->end_behavior)
     {
         sm->current = sm->current->next;
-        StateMachineInit(sm, instance_data);
+        StateMachineStart(sm, instance_data);
     }
 }
 
