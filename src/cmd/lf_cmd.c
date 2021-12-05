@@ -4,13 +4,13 @@
 
 #include <os.h>
 
+static void LineFollowCommandStart(Command_t* cmd, void* instance_data);
+static bool LineFollowCommandOnMessage(Command_t* cmd, Message_t* msg, void* instance_data);
+static void LineFollowCommandOnEnd(Command_t* cmd, void* instance_data);
 
-static void LineFollowCommandStart(Command_t *cmd, void *instance_data);
-static bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
-static void LineFollowCommandOnEnd(Command_t *cmd, void* instance_data);
-
-
-extern void LineFollowCommandInit(LineFollowCommand_t *cmd, uint8_t mode, uint8_t intersection_count, float base_velocity, uint32_t delay_ms, Command_t *next)
+extern void LineFollowCommandInit(LineFollowCommand_t* cmd, uint8_t mode,
+                                  uint8_t intersection_count, float base_velocity,
+                                  uint32_t delay_ms, Command_t* next)
 {
     cmd->base.on_Start = LineFollowCommandStart;
     cmd->base.on_Message = LineFollowCommandOnMessage;
@@ -23,7 +23,6 @@ extern void LineFollowCommandInit(LineFollowCommand_t *cmd, uint8_t mode, uint8_
     cmd->base_velocity = base_velocity;
     cmd->delay_ms = delay_ms;
 
-
     cmd->lfmsg.base.id = REFARR_START_LINE_FOLLOW_MSG_ID;
     cmd->lfmsg.base.msg_size = sizeof(LineFollowMessage_t);
     cmd->lfmsg.base_speed = cmd->base_velocity;
@@ -32,24 +31,25 @@ extern void LineFollowCommandInit(LineFollowCommand_t *cmd, uint8_t mode, uint8_
     cmd->lfmsg.response = &state_ctl_ao;
 }
 
-static void LineFollowCommandStart(Command_t *cmd, void* instance_data)
+static void LineFollowCommandStart(Command_t* cmd, void* instance_data)
 {
     UNUSED(instance_data);
-    
-    LineFollowCommand_t *lfcmd = (LineFollowCommand_t*)cmd;
-   
+
+    LineFollowCommand_t* lfcmd = (LineFollowCommand_t*)cmd;
+
     if (0 == lfcmd->delay_ms)
     {
         MsgQueuePut(&refarr_ss_ao, &lfcmd->lfmsg);
     }
     else
     {
-        TimedEventSimpleCreate(&lfcmd->delayed_event, &refarr_ss_ao, &lfcmd->lfmsg, lfcmd->delay_ms, TIMED_EVENT_SINGLE_TYPE);
+        TimedEventSimpleCreate(&lfcmd->delayed_event, &refarr_ss_ao, &lfcmd->lfmsg, lfcmd->delay_ms,
+                               TIMED_EVENT_SINGLE_TYPE);
         SchedulerAddTimedEvent(&lfcmd->delayed_event);
     }
 }
 
-static bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data)
+static bool LineFollowCommandOnMessage(Command_t* cmd, Message_t* msg, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);
@@ -57,11 +57,8 @@ static bool LineFollowCommandOnMessage(Command_t *cmd, Message_t *msg, void* ins
     return (REFARR_INTERSECTION_COUNT_HIT == msg->id);
 }
 
-static void LineFollowCommandOnEnd(Command_t *cmd, void *instance_data)
+static void LineFollowCommandOnEnd(Command_t* cmd, void* instance_data)
 {
     UNUSED(cmd);
     UNUSED(instance_data);
 }
-
-
-    

@@ -14,4 +14,3 @@ extern void Drive_Init();
  * @param msg
  */
 extern void DriveEventHandler(Message_t* msg);
-

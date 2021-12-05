@@ -12,13 +12,13 @@
 
 typedef struct Turn180Command_s
 {
-    Command_t base;
-    StateMachine_t state_machine;
+    Command_t              base;
+    StateMachine_t         state_machine;
     DriveOpenLoopCommand_t rev_drive_cmd;
-    DelayCommand_t rev_drive_delay_cmd;
-    TurnCommand_t turn180_cmd;
+    DelayCommand_t         rev_drive_delay_cmd;
+    TurnCommand_t          turn180_cmd;
 } Turn180Command_t;
 
-
-extern void Turn180CommandInit(Turn180Command_t *cmd, uint32_t turn_direction, uint32_t turn_type, float turn_speed, float rev_speed, uint32_t reverse_drive_time, Command_t *next);
-
+extern void Turn180CommandInit(Turn180Command_t* cmd, uint32_t turn_direction, uint32_t turn_type,
+                               float turn_speed, float rev_speed, uint32_t reverse_drive_time,
+                               Command_t* next);

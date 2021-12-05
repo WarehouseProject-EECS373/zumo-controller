@@ -17,16 +17,16 @@
 __attribute__((__interrupt__)) extern void EXTI15_10_IRQHandler(void)
 {
     // button debouncing
-    static bool time_set = false;
+    static bool     time_set = false;
     static uint32_t last_time = 0;
 
     OS_ISR_ENTER(&os);
 
     // if triggered by GPIO_13
-    if(__HAL_GPIO_EXTI_GET_FLAG(USER_BUTTON_PIN) != RESET)
+    if (__HAL_GPIO_EXTI_GET_FLAG(USER_BUTTON_PIN) != RESET)
     {
         // check debounce
-        if(!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
+        if (!time_set || USER_BUTTON_DEBOUNCE_TIME < (OSGetTime() - last_time))
         {
             // toggle drive state (enabled and disabled)
             Message_t drive_toggle_msg = {.id = DRIVE_TOGGLE_MSG_ID, .msg_size = sizeof(Message_t)};

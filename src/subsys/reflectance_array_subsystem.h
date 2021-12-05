@@ -14,4 +14,3 @@ extern void REFARR_Init();
  * @param msg
  */
 extern void ReflectanceArrayEventHandler(Message_t* msg);
-

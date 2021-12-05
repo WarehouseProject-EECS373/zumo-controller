@@ -5,57 +5,56 @@
 
 #include "app_defs.h"
 
-#define TEST_STATE_CONFIGURE_LF_DRIVE_CTL   0x90
-#define TEST_STATE_CONFIGURE_LF_TURN        0x91
-#define TEST_STATE_CONFIGURE_180T           0x92
+#define TEST_STATE_CONFIGURE_LF_DRIVE_CTL 0x90
+#define TEST_STATE_CONFIGURE_LF_TURN      0x91
+#define TEST_STATE_CONFIGURE_180T         0x92
 
-#define TEST_STATE_INIT             0x0
-#define TEST_STATE_LF_DRIVE_CTL     0x1
-#define TEST_STATE_LF_TURN          0x2
-#define TEST_STATE_180_TURN         0x3
+#define TEST_STATE_INIT         0x0
+#define TEST_STATE_LF_DRIVE_CTL 0x1
+#define TEST_STATE_LF_TURN      0x2
+#define TEST_STATE_180_TURN     0x3
 
-#define TEST_STATE_LF_TURN_DRIVE_UP     0x10
-#define TEST_STATE_LF_TURN_TURN         0x11
-#define TEST_STATE_LF_TURN_DRIVE_OUT    0x12
+#define TEST_STATE_LF_TURN_DRIVE_UP  0x10
+#define TEST_STATE_LF_TURN_TURN      0x11
+#define TEST_STATE_LF_TURN_DRIVE_OUT 0x12
 
-#define TEST_STATE_180T_TURN            0x22
-#define TEST_STATE_180T_DRIVE_OUT       0x23
+#define TEST_STATE_180T_TURN      0x22
+#define TEST_STATE_180T_DRIVE_OUT 0x23
 
 #define LF_TURN_DELAY 10
 
-static TimedEventSimple_t post_turn_lf_delay_event;
+static TimedEventSimple_t  post_turn_lf_delay_event;
 static LineFollowMessage_t post_turn_lf_delay_msg;
 
-static TimedEventSimple_t turn180_delay_event;
+static TimedEventSimple_t  turn180_delay_event;
 static LineFollowMessage_t turn180_delay_msg;
 
-static TimedEventSimple_t turn180_drive_delay_event;
+static TimedEventSimple_t  turn180_drive_delay_event;
 static LineFollowMessage_t turn180_drive_delay_msg;
 
 static DriveOpenLoopControlMessage_t cached_drive_control_msg;
 
-static float cached_base_velocity;
+static float   cached_base_velocity;
 static uint8_t cached_mode;
 
 static uint32_t test_state = TEST_STATE_INIT;
 static uint32_t test_sub_state = TEST_STATE_INIT;
 
-static void ConfigureLFTurn(Message_t *msg);
-static void Configure180T(Message_t *msg);
-static void ConfigureLF(Message_t *msg);
+static void ConfigureLFTurn(Message_t* msg);
+static void Configure180T(Message_t* msg);
+static void ConfigureLF(Message_t* msg);
 
-
-static void HandleConfigure(Message_t *msg);
-static void HandleTestStart(Message_t *msg);
-static void HandleTurn(Message_t *msg);
-static void Handle180Turn(Message_t *msg);
+static void HandleConfigure(Message_t* msg);
+static void HandleTestStart(Message_t* msg);
+static void HandleTurn(Message_t* msg);
+static void Handle180Turn(Message_t* msg);
 
 static void StartDelayedLF(uint32_t delay);
 static void StopDrive();
 
-static void StartLF(LineFollowMessage_t *lf_msg);
+static void StartLF(LineFollowMessage_t* lf_msg);
 
-static void HandleTestStart(Message_t *msg)
+static void HandleTestStart(Message_t* msg)
 {
     if (TEST_LF_MSG_ID == msg->id)
     {
@@ -71,7 +70,7 @@ static void HandleTestStart(Message_t *msg)
     }
 }
 
-static void Configure180T(Message_t *msg)
+static void Configure180T(Message_t* msg)
 {
     static uint8_t msg_count = 0;
 
@@ -93,8 +92,10 @@ static void Configure180T(Message_t *msg)
     }
     else if (3 == msg_count && DRIVE_OPEN_LOOP_MSG_ID == msg->id)
     {
-        TimedEventSimpleCreate(&turn180_drive_delay_event, &drive_ss_ao, &turn180_drive_delay_msg, 400, TIMED_EVENT_SINGLE_TYPE);
-        TimedEventSimpleCreate(&turn180_delay_event, &refarr_ss_ao, &turn180_delay_msg, 400, TIMED_EVENT_SINGLE_TYPE);
+        TimedEventSimpleCreate(&turn180_drive_delay_event, &drive_ss_ao, &turn180_drive_delay_msg,
+                               400, TIMED_EVENT_SINGLE_TYPE);
+        TimedEventSimpleCreate(&turn180_delay_event, &refarr_ss_ao, &turn180_delay_msg, 400,
+                               TIMED_EVENT_SINGLE_TYPE);
         SchedulerAddTimedEvent(&turn180_drive_delay_event);
         SchedulerAddTimedEvent(&turn180_delay_event);
         MsgQueuePut(&drive_ss_ao, msg);
@@ -104,15 +105,15 @@ static void Configure180T(Message_t *msg)
     }
 }
 
-static void ConfigureLF(Message_t *msg)
+static void ConfigureLF(Message_t* msg)
 {
     test_state = TEST_STATE_LF_DRIVE_CTL;
-    LineFollowMessage_t *lf_msg = (LineFollowMessage_t *)msg;
-        
+    LineFollowMessage_t* lf_msg = (LineFollowMessage_t*)msg;
+
     StartLF(lf_msg);
 }
 
-static void ConfigureLFTurn(Message_t *msg)
+static void ConfigureLFTurn(Message_t* msg)
 {
     if (DRIVE_OPEN_LOOP_MSG_ID == msg->id)
     {
@@ -120,17 +121,17 @@ static void ConfigureLFTurn(Message_t *msg)
     }
     else if (REFARR_START_LINE_FOLLOW_MSG_ID == msg->id)
     {
-        LineFollowMessage_t *lf_msg = (LineFollowMessage_t *)msg;
+        LineFollowMessage_t* lf_msg = (LineFollowMessage_t*)msg;
         test_state = TEST_STATE_LF_TURN;
         test_sub_state = TEST_STATE_LF_TURN_DRIVE_UP;
         cached_base_velocity = lf_msg->base_speed;
         lf_msg->intersection_count = 1;
-        
+
         StartLF(lf_msg);
     }
 }
 
-static void StartLF(LineFollowMessage_t *lf_msg)
+static void StartLF(LineFollowMessage_t* lf_msg)
 {
     lf_msg->response = &test_ss_ao;
     cached_mode = lf_msg->mode;
@@ -139,7 +140,7 @@ static void StartLF(LineFollowMessage_t *lf_msg)
     MsgQueuePut(&refarr_ss_ao, lf_msg);
 }
 
-static void HandleConfigure(Message_t *msg)
+static void HandleConfigure(Message_t* msg)
 {
     if (TEST_STATE_CONFIGURE_180T == test_state)
     {
@@ -161,7 +162,7 @@ static void HandleConfigure(Message_t *msg)
     }
 }
 
-static void HandleTurn(Message_t *msg)
+static void HandleTurn(Message_t* msg)
 {
     if (TEST_STATE_LF_TURN_DRIVE_UP == test_sub_state)
     {
@@ -178,7 +179,6 @@ static void HandleTurn(Message_t *msg)
             MsgQueuePut(&refarr_ss_ao, &lfmsg);
 
             test_sub_state = TEST_STATE_LF_TURN_TURN;
-
         }
     }
     else if (TEST_STATE_LF_TURN_TURN == test_sub_state)
@@ -200,7 +200,7 @@ static void HandleTurn(Message_t *msg)
     }
 }
 
-static void Handle180Turn(Message_t *msg)
+static void Handle180Turn(Message_t* msg)
 {
     if (TEST_STATE_180T_TURN == test_sub_state)
     {
@@ -232,9 +232,11 @@ static void StartDelayedLF(uint32_t delay)
     post_turn_lf_delay_msg.intersection_count = 1;
     post_turn_lf_delay_msg.response = &test_ss_ao;
     post_turn_lf_delay_msg.base_speed = cached_base_velocity;
-    post_turn_lf_delay_msg.mode = REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
+    post_turn_lf_delay_msg.mode =
+        REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE;
 
-    TimedEventSimpleCreate(&post_turn_lf_delay_event, &refarr_ss_ao, &post_turn_lf_delay_msg, delay, TIMED_EVENT_SINGLE_TYPE);
+    TimedEventSimpleCreate(&post_turn_lf_delay_event, &refarr_ss_ao, &post_turn_lf_delay_msg, delay,
+                           TIMED_EVENT_SINGLE_TYPE);
     SchedulerAddTimedEvent(&post_turn_lf_delay_event);
 }
 
@@ -250,14 +252,15 @@ static void StopDrive()
     MsgQueuePut(&drive_ss_ao, &olctl_msg);
 }
 
-extern void TestSystemEventHandler(Message_t *msg)
+extern void TestSystemEventHandler(Message_t* msg)
 {
     if (TEST_STATE_INIT == test_state)
     {
         HandleTestStart(msg);
     }
-    else if (TEST_STATE_CONFIGURE_180T == test_state || TEST_STATE_CONFIGURE_LF_DRIVE_CTL == test_state
-                || TEST_STATE_CONFIGURE_LF_TURN == test_state)
+    else if (TEST_STATE_CONFIGURE_180T == test_state ||
+             TEST_STATE_CONFIGURE_LF_DRIVE_CTL == test_state ||
+             TEST_STATE_CONFIGURE_LF_TURN == test_state)
     {
         HandleConfigure(msg);
     }
@@ -278,7 +281,6 @@ extern void TestSystemEventHandler(Message_t *msg)
         Handle180Turn(msg);
     }
 }
-
 
 extern void TestSystemInit()
 {

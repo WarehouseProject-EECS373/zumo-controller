@@ -7,11 +7,9 @@
 typedef struct DriveOpenLoopCommand_s
 {
     Command_t base;
-    float left_out;
-    float right_out;
+    float     left_out;
+    float     right_out;
 } DriveOpenLoopCommand_t;
 
-
-extern void DriveOpenLoopCommandInit(DriveOpenLoopCommand_t *cmd, float left_out, float right_out, Command_t* next);
-
-
+extern void DriveOpenLoopCommandInit(DriveOpenLoopCommand_t* cmd, float left_out, float right_out,
+                                     Command_t* next);

@@ -19,4 +19,3 @@ extern void ITCTL_Init();
  *
  */
 extern void InputEventHandler(Message_t*);
-

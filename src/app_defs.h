@@ -5,13 +5,11 @@
 // share os with all
 extern OS_t os;
 
-
 //*****************************************************************/
-// Global constants 
+// Global constants
 //*****************************************************************/
 
-#define LINE_FOLLOW_MAX_BASE_VELOCITY   0.40
-
+#define LINE_FOLLOW_MAX_BASE_VELOCITY 0.40
 
 //*****************************************************************/
 // Custom Messages
@@ -20,71 +18,72 @@ extern OS_t os;
 typedef struct DriveControlMessage_s
 {
     Message_t base;
-    float actual;
+    float     actual;
 } DriveControlMessage_t;
 
 typedef struct DriveSetpointMessage_s
 {
     Message_t base;
-    float setpoint;
+    float     setpoint;
 } DriveSetpointMessage_t;
 
 typedef struct DriveTimedTurn_s
 {
-    Message_t base;
-    ActiveObject_t *response;
-    uint16_t time;
-    uint8_t direction;
+    Message_t       base;
+    ActiveObject_t* response;
+    uint16_t        time;
+    uint8_t         direction;
 } DriveTimedTurn_t;
 
 typedef struct DriveBaseVelocityMessage_s
 {
     Message_t base;
-    float base_velocity;
+    float     base_velocity;
 } DriveBaseVelocityMessage_t;
 
 typedef struct DriveOpenLoopControlMessage_s
 {
     Message_t base;
-    float percent_left;
-    float percent_right;
+    float     percent_left;
+    float     percent_right;
 } DriveOpenLoopControlMessage_t;
 
 typedef struct UartSmallPacketMessage_s
 {
     Message_t base;
-    uint8_t length;
-    uint8_t payload[8];
+    uint8_t   length;
+    uint8_t   payload[8];
 } UartSmallPacketMessage_t;
 
 typedef struct UartLargePacketMessage_s
 {
     Message_t base;
-    uint16_t length;
-    uint16_t mem_key;
+    uint16_t  length;
+    uint16_t  mem_key;
 } UartLargePacketMessage_t;
 
 typedef struct DispatchMessage_s
 {
     Message_t base;
-    uint8_t bay_id;
-    uint8_t aisle_id;
+    uint8_t   bay_id;
+    uint8_t   aisle_id;
 } DispatchMessage_t;
 
 typedef struct LineFollowMessage_s
 {
-    Message_t base;
-    ActiveObject_t *response;
-    float base_speed;
-    uint8_t intersection_count;
-    uint8_t mode; // 4 most sig bits: drive ctl loop enable, lowest 4 are left turn, regular, right turn
+    Message_t       base;
+    ActiveObject_t* response;
+    float           base_speed;
+    uint8_t         intersection_count;
+    uint8_t
+        mode; // 4 most sig bits: drive ctl loop enable, lowest 4 are left turn, regular, right turn
 } LineFollowMessage_t;
 
 typedef struct PropertyGetSetMessage_s
 {
     Message_t base;
-    uint16_t p_id;
-    uint8_t value[4];
+    uint16_t  p_id;
+    uint8_t   value[4];
 } PropertyGetSetMessage_t;
 
 //*****************************************************************/
@@ -96,9 +95,8 @@ typedef struct PropertyGetSetMessage_s
 #define SENSOR_READ_MSG_ID 0x1
 #define HEARTBEAT_MSG_ID   0x2
 
-
-#define DRIVE_MODE_OPEN_LOOP    0x0
-#define DRIVE_MODE_CLOSED_LOOP  0x1
+#define DRIVE_MODE_OPEN_LOOP   0x0
+#define DRIVE_MODE_CLOSED_LOOP 0x1
 
 // drive subsystem
 #define DRIVE_CTL_IN_MSG_ID              0x10
@@ -114,12 +112,12 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_OPEN_LOOP_MSG_ID           0x1A
 #define DRIVE_PERIODIC_EVENT_MSG_ID      0x1B
 
-#define DRIVE_TURN_DIR_LEFT     0
-#define DRIVE_TURN_DIR_RIGHT    1
+#define DRIVE_TURN_DIR_LEFT  0
+#define DRIVE_TURN_DIR_RIGHT 1
 
-#define REFARR_LEFT_SENSOR_ENABLE   0x1
-#define REFARR_RIGHT_SENSOR_ENABLE   0x2
-#define REFARR_DRIVE_CTL_ENABLE     0x10
+#define REFARR_LEFT_SENSOR_ENABLE  0x1
+#define REFARR_RIGHT_SENSOR_ENABLE 0x2
+#define REFARR_DRIVE_CTL_ENABLE    0x10
 
 // reflectance array //ask about priorities
 #define REFARR_CALIBRATE_MSG_ID         0x30
@@ -133,11 +131,11 @@ typedef struct PropertyGetSetMessage_s
 #define REFARR_INTERSECTION_COUNT_HIT   0x39
 #define REFARR_PROCESS_READING_MSG_ID   0x3A
 
-#define PUSH_BUTTON_PRESSED_MSG_ID          0x61
+#define PUSH_BUTTON_PRESSED_MSG_ID 0x61
 
-#define TEST_LF_MSG_ID          0x80
-#define TEST_TURN_MSG_ID        0x81
-#define TEST_180_MSG_ID         0x82
+#define TEST_LF_MSG_ID   0x80
+#define TEST_TURN_MSG_ID 0x81
+#define TEST_180_MSG_ID  0x82
 
 // comms subsystem
 #define UART_SMALL_PACKET_MSG_ID    0x81
@@ -148,95 +146,96 @@ typedef struct PropertyGetSetMessage_s
 #define LINE_FOLLOW_TRACE_MSG_ID    0x86
 
 // main state machine
-#define SM_PERIODIC_EVENT_MSG_ID        0x100
+#define SM_PERIODIC_EVENT_MSG_ID 0x100
 
-#define SM_DISPATCH_FROM_IDLE_MSG_ID    0x110
-#define SM_CALIBRATE_DONE               0x120
+#define SM_DISPATCH_FROM_IDLE_MSG_ID 0x110
+#define SM_CALIBRATE_DONE            0x120
 
 //*****************************************************************/
 // Property Management
 //*****************************************************************/
 
- 
-#define MSG_P_GET_ID            0x10
-#define MSG_P_GET_RESPONSE_ID   0x11
+#define MSG_P_GET_ID          0x10
+#define MSG_P_GET_RESPONSE_ID 0x11
 
-#define MSG_P_SET_ID            0x20
+#define MSG_P_SET_ID 0x20
 
-#define GET_PROPERTY_MSG_ID     0x220
-#define SET_PROPERTY_MSG_ID     0x221
+#define GET_PROPERTY_MSG_ID 0x220
+#define SET_PROPERTY_MSG_ID 0x221
 
-#define GET_PROPERTY(var, vartype) do                       \
-{                                                           \
-    UartSmallPacketMessage_t msg;                           \
-    msg.base.id = UART_SMALL_PACKET_MSG_ID;                 \
-    msg.base.msg_size = sizeof(UartSmallPacketMessage_t);   \
-    msg.payload[0] = MSG_P_GET_RESPONSE_ID;                 \
-    msg.length = 5;                                         \
-    vartype* start = (vartype*)(msg.payload + 1);           \
-    *start = var;                                           \
-    MsgQueuePut(&comms_ss_ao, &msg);                        \
-} while(false);                                             \
+#define GET_PROPERTY(var, vartype)                                                                 \
+    do                                                                                             \
+    {                                                                                              \
+        UartSmallPacketMessage_t msg;                                                              \
+        msg.base.id = UART_SMALL_PACKET_MSG_ID;                                                    \
+        msg.base.msg_size = sizeof(UartSmallPacketMessage_t);                                      \
+        msg.payload[0] = MSG_P_GET_RESPONSE_ID;                                                    \
+        msg.length = 5;                                                                            \
+        vartype* start = (vartype*)(msg.payload + 1);                                              \
+        *start = var;                                                                              \
+        MsgQueuePut(&comms_ss_ao, &msg);                                                           \
+    } while (false);
 
-#define SET_PROPERTY(msg, var, vartype) do {                \
-     var = *((vartype*)(msg->value));                       \
-} while (false);                                            \
+#define SET_PROPERTY(msg, var, vartype)                                                            \
+    do                                                                                             \
+    {                                                                                              \
+        var = *((vartype*)(msg->value));                                                           \
+    } while (false);
 
-#define GET_SET_PROPERTY(msg, var, vartype) do {            \
-    if (GET_PROPERTY_MSG_ID == msg->base.id)                \
-    {                                                       \
-        GET_PROPERTY(var, vartype);                         \
-    }                                                       \
-    else if (SET_PROPERTY_MSG_ID == msg->base.id)           \
-    {                                                       \
-        SET_PROPERTY(msg, var, vartype);                    \
-    }                                                       \
-} while(false);                                             \
+#define GET_SET_PROPERTY(msg, var, vartype)                                                        \
+    do                                                                                             \
+    {                                                                                              \
+        if (GET_PROPERTY_MSG_ID == msg->base.id)                                                   \
+        {                                                                                          \
+            GET_PROPERTY(var, vartype);                                                            \
+        }                                                                                          \
+        else if (SET_PROPERTY_MSG_ID == msg->base.id)                                              \
+        {                                                                                          \
+            SET_PROPERTY(msg, var, vartype);                                                       \
+        }                                                                                          \
+    } while (false);
 
+#define DRIVE_PROPERTY_MIN_ID 0x0
+#define DRIVE_PROPERTY_MAX_ID 0xA
 
-#define DRIVE_PROPERTY_MIN_ID       0x0
-#define DRIVE_PROPERTY_MAX_ID       0xA
-
-#define DRIVE_DEADBAND_ID           0x0
-#define DRIVE_CTL_LOOP_PERIOD_ID    0x1
-#define DRIVE_kP_ID                 0x2
-#define DRIVE_kI_ID                 0x3
-#define DRIVE_kD_ID                 0x4
-#define DRIVE_BASE_OUTPUT_ID        0x5
-#define DRIVE_STATE_ID              0x6
-#define DRIVE_SETPOINT_ID           0x7
-#define DRIVE_ACTUAL_ID             0x8
-#define DRIVE_I_ZONE_ID             0x9
-
+#define DRIVE_DEADBAND_ID        0x0
+#define DRIVE_CTL_LOOP_PERIOD_ID 0x1
+#define DRIVE_kP_ID              0x2
+#define DRIVE_kI_ID              0x3
+#define DRIVE_kD_ID              0x4
+#define DRIVE_BASE_OUTPUT_ID     0x5
+#define DRIVE_STATE_ID           0x6
+#define DRIVE_SETPOINT_ID        0x7
+#define DRIVE_ACTUAL_ID          0x8
+#define DRIVE_I_ZONE_ID          0x9
 
 //*****************************************************************/
-// Commands 
+// Commands
 //*****************************************************************/
 
-#define COMMAND_ON_END_INSTANT          0x0
-#define COMMAND_ON_END_WAIT_FOR_END     0x1
+#define COMMAND_ON_END_INSTANT      0x0
+#define COMMAND_ON_END_WAIT_FOR_END 0x1
 
 // turn configuration
-#define TURN_TYPE_FROM_BASE             0x0
-#define TURN_TYPE_FROM_TOP              0x1
-#define TURN_TYPE_180_LEFT              0x0
-#define TURN_TYPE_180_RIGHT             0x1
-#define TURN_DIR_LEFT                   0x0
-#define TURN_DIR_RIGHT                  0x1
+#define TURN_TYPE_FROM_BASE 0x0
+#define TURN_TYPE_FROM_TOP  0x1
+#define TURN_TYPE_180_LEFT  0x0
+#define TURN_TYPE_180_RIGHT 0x1
+#define TURN_DIR_LEFT       0x0
+#define TURN_DIR_RIGHT      0x1
 
-#define TIMED_EVENT_DONE_MSG_ID         0x999
+#define TIMED_EVENT_DONE_MSG_ID 0x999
 
 typedef struct Command_s Command_t;
 
 struct Command_s
 {
-   void (*on_Start)(Command_t* cmd, void* instance_data);
-   bool (*on_Message)(Command_t* cmd, Message_t* msg, void* instance_data);
-   void (*on_End)(Command_t* cmd, void* instance_data);
-   uint32_t end_behavior;
-   Command_t* next;
+    void (*on_Start)(Command_t* cmd, void* instance_data);
+    bool (*on_Message)(Command_t* cmd, Message_t* msg, void* instance_data);
+    void (*on_End)(Command_t* cmd, void* instance_data);
+    uint32_t   end_behavior;
+    Command_t* next;
 };
-
 
 //*****************************************************************/
 // Active Object Extern Declarations and Configuration
@@ -252,13 +251,13 @@ struct Command_s
 #define STATE_MACHINE_QUEUE_SIZE 16
 #define TEST_AO_QUEUE_SIZE       8
 
-#define WATCHDOG_AO_ID      0x0
-#define DRIVE_AO_ID         0x1
-#define INPUT_CTL_AO_ID     0x2
-#define COMMS_AO_ID         0x3
-#define STATE_AO_ID         0x4
-#define REFARR_AO_ID        0x5
-#define TEST_AO_ID          0x6
+#define WATCHDOG_AO_ID  0x0
+#define DRIVE_AO_ID     0x1
+#define INPUT_CTL_AO_ID 0x2
+#define COMMS_AO_ID     0x3
+#define STATE_AO_ID     0x4
+#define REFARR_AO_ID    0x5
+#define TEST_AO_ID      0x6
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
@@ -267,4 +266,3 @@ ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(test_ss_ao, TEST_AO_QUEUE_SIZE)
-

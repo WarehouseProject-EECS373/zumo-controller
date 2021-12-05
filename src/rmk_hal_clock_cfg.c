@@ -12,7 +12,7 @@ static TIM_HandleTypeDef hhal_tim;
 
 __attribute__((__interrupt__)) extern void TIM2_IRQHandler()
 {
-    if(__HAL_TIM_GET_FLAG(&hhal_tim, TIM_FLAG_UPDATE) != RESET)
+    if (__HAL_TIM_GET_FLAG(&hhal_tim, TIM_FLAG_UPDATE) != RESET)
     {
         __HAL_TIM_CLEAR_IT(&hhal_tim, TIM_IT_UPDATE);
         HAL_IncTick();
@@ -59,14 +59,14 @@ extern void Clock_Init()
 {
     // setup system clock using High speed internal oscillator
     RCC->CR |= (RCC_CR_HSION);
-    while(!(RCC->CR & RCC_CR_HSIRDY))
+    while (!(RCC->CR & RCC_CR_HSIRDY))
     {
     }
 
     RCC->CFGR &= ~(RCC_CFGR_SW);
     RCC->CFGR |= (RCC_CFGR_SW_HSI);
 
-    while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
     {
     }
 
@@ -79,14 +79,14 @@ extern void Clock_Init()
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
     __HAL_RCC_PWR_CLK_ENABLE();
-    
+
     __HAL_RCC_USART6_CLK_ENABLE();
 
     __HAL_RCC_TIM3_CLK_ENABLE();
     __HAL_RCC_TIM4_CLK_ENABLE();
     __HAL_RCC_TIM5_CLK_ENABLE();
     __HAL_RCC_TIM11_CLK_ENABLE();
-    
+
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
