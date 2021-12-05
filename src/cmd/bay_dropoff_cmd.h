@@ -18,7 +18,7 @@ typedef struct BayDropoffCommand_s
 } BayDropoffCommand_t;
 
 
-extern void BayDropoffCommandInit(BayDropoffCommand_t *cmd, uint32_t bay_id, uint32_t remaining_bays, Command_t *next);
+extern void BayDropoffCommandInit(BayDropoffCommand_t *cmd, uint32_t bay_id, uint32_t post_dropoff_intersection_count, Command_t *next);
 
 
 

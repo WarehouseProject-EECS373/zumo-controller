@@ -10,10 +10,7 @@
 static void BayDropoffCommandStart(Command_t *cmd, void* instance_data);
 static bool BayDropoffCommandOnMessage(Command_t *cmd, Message_t *msg, void* instance_data);
 static void BayDropoffCommandOnEnd(Command_t *cmd, void* instance_data);
-
 static uint32_t GetTurnDirection(uint32_t bay_id);
-
-
 
 static uint32_t GetTurnDirection(uint32_t bay_id)
 {
@@ -28,7 +25,10 @@ static uint32_t GetTurnDirection(uint32_t bay_id)
 }
 
 
-extern void BayDropoffCommandInit(BayDropoffCommand_t *cmd, uint32_t bay_id, uint32_t remaining_bays, Command_t *next)
+extern void BayDropoffCommandInit(BayDropoffCommand_t *cmd,
+        uint32_t bay_id,
+        uint32_t post_dropoff_intersection_count,
+        Command_t *next)
 {
     cmd->base.on_Start = BayDropoffCommandStart;
     cmd->base.on_Message = BayDropoffCommandOnMessage;
@@ -37,10 +37,16 @@ extern void BayDropoffCommandInit(BayDropoffCommand_t *cmd, uint32_t bay_id, uin
     cmd->base.next = next;
 
 
-
+    // turn into bay, drive until bay end
     TurnCommandInit(&cmd->turn_in_cmd, GetTurnDirection(bay_id), 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, (Command_t*)&cmd->turn_around_cmd);
+
+    // TODO: add electromagnet disable here
+    
+    // reverse, turn around, line follow until the aisle
     Turn180CommandInit(&cmd->turn_around_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, TURN_AROUND_SPEED, REVERSE_SPEED, REVERSE_DRIVE_TIME, (Command_t*)&cmd->turn_out_cmd);
-   TurnCommandInit(&cmd->turn_out_cmd, GetTurnDirection(bay_id), remaining_bays, TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+
+    // turn out of bay and drive
+    TurnCommandInit(&cmd->turn_out_cmd, GetTurnDirection(bay_id), post_dropoff_intersection_count, TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
     StateMachineInit(&cmd->state_machine, (Command_t*)&cmd->turn_in_cmd);
 }

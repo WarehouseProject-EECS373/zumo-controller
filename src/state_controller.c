@@ -45,18 +45,31 @@ static void HandleDisptach(DispatchMessage_t *msg)
     // turn into aisle 1 if necessary
     if (1 == aisle_id)
     {
+        // stop at first intersection
         uint8_t leave_idle_intersection_count = 1;
+
+        // line follow until first intersection
         LineFollowCommandInit(&leave_idle_lf_cmd, lf_mode,  leave_idle_intersection_count, LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&aisle_1_turn_cmd);
+
+        // turn left at first intersection, drive until bay index
         TurnCommandInit(&aisle_1_turn_cmd, TURN_DIR_LEFT, bay_index, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, (Command_t*)&bay_dropoff_cmd);
-    BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 1, (Command_t*)&aisle_1_leave_cmd);
-    TurnCommandInit(&aisle_1_leave_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+
+        // dropoff, drive until last intersection in aisle (remaining bays + 1 for exit intersection)
+        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 1, (Command_t*)&aisle_1_leave_cmd);
+
+        // start turn, then drive until idle position
+        TurnCommandInit(&aisle_1_leave_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
     }
     else
     {
-        // +1 for aisle 1 intersection
+        // +1 for aisle 1 intersection, can drive straight through first intersection
         uint8_t leave_idle_intersection_count = 1 + bay_index;
+
+        // start line following, arrive at bay
         LineFollowCommandInit(&leave_idle_lf_cmd, lf_mode,  leave_idle_intersection_count, LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&bay_dropoff_cmd);
-    BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 2, NULL);
+
+        // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for idle position)
+        BayDropoffCommandInit(&bay_dropoff_cmd, bay_id, MAX_BAY_COUNT - bay_id + 2, NULL);
     }
 
     StateMachineInit(&state_machine, (Command_t*)&leave_idle_lf_cmd);
@@ -74,6 +87,8 @@ extern void StateControllerEventHandler(Message_t *msg)
     }
     else
     {
+        // if message comes to state machine and it's not a dispatch, send it to state machine
+        // SM will handle message using current command
         StateMachineStep(&state_machine, msg, NULL);
     }
 }
