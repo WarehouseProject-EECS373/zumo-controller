@@ -14,7 +14,7 @@
 #include "cmd/bay_dropoff_cmd.h"
 
 #define ZUMO_MAX_COUNT 2
-#define ZUMO_ID        1
+#define ZUMO_ID        0
 
 #define IDLE_STATE       0x1
 #define DISPATCHED_STATE 0x2

@@ -58,7 +58,7 @@
 // if we ever get small output percent that's "close enough" to 0.0 but PID
 // doesn't drive to exactly 0.0
 static float    deadband = 0.0;
-static uint32_t drive_control_loop_period = 11;
+static uint32_t drive_control_loop_period = 7;
 
 // position control PID constants
 static float kP = 0.0004;

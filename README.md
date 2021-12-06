@@ -64,11 +64,11 @@ A rough outline:
 
 ## Drive Control
 
-PID control with integrator bounds, output bounding, and support for deadband. Conrol loop runs at 100Hz
+PID control with integrator bounds, output bounding, and support for deadband. Conrol loop runs at 200Hz
 
 ### Line Following
 
-100Hz periodic event to read from reflectance sensors and update actual position in drive subsystem.
+200Hz periodic event to read from reflectance sensors and update actual position in drive subsystem.
 This implementation is non-blocking and works well with the event-driven RTOS
 
 [Reflectance sensor array info/pinout](https://www.pololu.com/docs/0J57/2.c) 
