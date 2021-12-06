@@ -23,10 +23,10 @@
 #define TURN_SPEED_REV -0.6
 #define MAX_BAY_COUNT  3
 
+static uint16_t queue_position = ZUMO_ID;
 static uint32_t dispatches_received = 0;
-static uint32_t dispatches_at_start = 0;
 
-static uint32_t state = IDLE_STATE;
+static uint32_t controller_state = IDLE_STATE;
 
 static StateMachine_t state_machine;
 
@@ -36,8 +36,10 @@ static BayDropoffCommand_t bay_dropoff_cmd;
 static TurnCommand_t       aisle_1_leave_cmd;
 
 static LineFollowCommand_t idle_lf_cmd;
+static LineFollowCommand_t idle_arrive_lf_cmd;
 
 static void HandleDisptach(DispatchMessage_t* msg);
+static void StopDrive();
 
 static void HandleDisptach(DispatchMessage_t* msg)
 {
@@ -94,6 +96,17 @@ static void HandleDisptach(DispatchMessage_t* msg)
     StateMachineStart(&state_machine, NULL);
 }
 
+static void StopDrive()
+{
+    DriveOpenLoopControlMessage_t stop_msg;
+    stop_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+    stop_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+    stop_msg.percent_left = 0.0;
+    stop_msg.percent_right = 0.0;
+
+    MsgQueuePut(&drive_ss_ao, &stop_msg);
+}
+
 extern void StateController_Init()
 {
 }
@@ -102,26 +115,32 @@ extern void StateControllerEventHandler(Message_t* msg)
 {
     if (SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
     {
-        if (IDLE_STATE == state)
+        if (IDLE_STATE == controller_state)
         {
-            if (ZUMO_ID == dispatches_received % ZUMO_MAX_COUNT)
+            if (0 == queue_position)
             {
-                state = DISPATCHED_STATE;
-                dispatches_at_start = dispatches_received;
+                // dispatch
+                controller_state = DISPATCHED_STATE;
                 HandleDisptach((DispatchMessage_t*)msg);
+
+                // count the number of dispatch messages received while dropping off
+                dispatches_received = 0;
             }
             else
             {
+                // advance to next queue position
                 LineFollowCommandInit(&idle_lf_cmd,
                                       REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
                                           REFARR_RIGHT_SENSOR_ENABLE,
                                       1, LINE_FOLLOW_MAX_BASE_VELOCITY, 0, NULL);
+                --queue_position;
                 StateMachineInit(&state_machine, (Command_t*)&idle_lf_cmd);
                 StateMachineStart(&state_machine, NULL);
             }
         }
         else
         {
+            // while dropping off (in dispatched state)
             ++dispatches_received;
         }
     }
@@ -131,28 +150,34 @@ extern void StateControllerEventHandler(Message_t* msg)
         // SM will handle message using current command
         if (StateMachineStep(&state_machine, msg, NULL))
         {
-            if (DISPATCHED_STATE == state && dispatches_at_start < dispatches_received + ZUMO_ID)
+            if (DISPATCHED_STATE == controller_state)
             {
-                LineFollowCommandInit(&idle_lf_cmd,
+                if (0 < dispatches_received)
+                {
+                    // go to next available queue position when done
+                    LineFollowCommandInit(&idle_arrive_lf_cmd,
                                       REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
                                           REFARR_RIGHT_SENSOR_ENABLE,
-                                      dispatches_received - dispatches_at_start + ZUMO_ID,
+                                      dispatches_received,
                                       LINE_FOLLOW_MAX_BASE_VELOCITY, 0, NULL);
 
-                StateMachineInit(&state_machine, (Command_t*)&idle_lf_cmd);
-                StateMachineStart(&state_machine, NULL);
-                state = IDLE_STATE;
+                    StateMachineInit(&state_machine, (Command_t*)&idle_arrive_lf_cmd);
+                    StateMachineStart(&state_machine, NULL);
+                }
+                else
+                {
+                    StopDrive();
+                }
+
+                // reset to IDLE when arrived at the right queue position
+                controller_state = IDLE_STATE;
+                queue_position = ZUMO_MAX_COUNT - 1 - dispatches_received;
+                dispatches_received = 0;
             }
             else
             {
-                state = IDLE_STATE;
-                DriveOpenLoopControlMessage_t stop_msg;
-                stop_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-                stop_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-                stop_msg.percent_left = 0.0;
-                stop_msg.percent_right = 0.0;
-
-                MsgQueuePut(&drive_ss_ao, &stop_msg);
+                controller_state = IDLE_STATE;
+                StopDrive();
             }
         }
     }
