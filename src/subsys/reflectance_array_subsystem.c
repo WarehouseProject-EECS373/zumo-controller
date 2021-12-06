@@ -30,7 +30,8 @@
 #define ABOVE_LINE(sensor)                   ((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)              ((val) > NOISE_THRESHOLD)
 #define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD 10
-#define MAX_READING                          3000
+#define MAX_READING                          4000
+#define SENSOR_CHARGE_DELAY                  50
 #define MIDPOINT                             2500
 
 #define NOT_IN_INTERSECTION 0
@@ -106,22 +107,72 @@ __attribute__((__interrupt__)) extern void TIM5_IRQHandler()
     OS_ISR_EXIT();
 }
 
+static void HandlePeriodicEvent()
+{
+    //glob_count = 0;
+    // initialize read buffer
+    memcpy(read_buffer, default_vals, sizeof(read_buffer));
+
+    // Set GPIOs as output
+    gpioc.Mode = GPIO_MODE_OUTPUT_PP;
+    HAL_GPIO_Init(GPIOC, &gpioc);
+
+    // write GPIOs
+    GPIOC->BSRR = gpioc.Pin;
+
+    // start sensor read sequence
+    TIM11->CNT = 0;
+    TIM11->CCR1 = SENSOR_CHARGE_DELAY;
+    __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_CC1);
+    TIM11->CR1 |= 1;
+}
+
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim)
 {
     if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    {
+    {   
         TIM11->CR1 &= ~((uint32_t)1);
-        TIM11->CNT = 0;
-        gpioc.Mode = GPIO_MODE_INPUT;
-        HAL_GPIO_Init(GPIOC, &gpioc);
-        HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1);
-        HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_2);
-        HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3);
-        HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_4);
-        HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
-        HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
-        TIM4->CR1 |= 1;
-        TIM5->CR1 |= 1;
+        if(TIM11->CCR1 == SENSOR_CHARGE_DELAY)
+        {
+            if (glob_count > 0)
+            {
+                TIM4->CR1 &= ~((uint32_t)1);
+                TIM5->CR1 &= ~((uint32_t)1);
+                TIM4->CNT = 0;
+                TIM5->CNT = 0;
+                glob_count = 0;
+            }
+            TIM11->CNT = 0;
+            TIM11->CCR1 = MAX_READING;
+            gpioc.Mode = GPIO_MODE_INPUT;
+            HAL_GPIO_Init(GPIOC, &gpioc);
+            HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1);
+            HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_2);
+            HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3);
+            HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_4);
+            HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
+            HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
+            __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_CC1);
+            TIM4->CR1 |= 1;
+            TIM5->CR1 |= 1;
+            TIM11->CR1 |= 1;
+        }
+        else
+        {
+            if (glob_count < 6)
+            {
+                TIM4->CR1 &= ~((uint32_t)1);
+                TIM5->CR1 &= ~((uint32_t)1);
+                glob_count = 0;
+                TIM4->CNT = 0;
+                TIM5->CNT = 0;
+
+                memcpy(sensor_values, read_buffer, sizeof(sensor_values));
+                Message_t pr_msg = {.id = REFARR_PROCESS_READING_MSG_ID, .msg_size = sizeof(Message_t)};
+                MsgQueuePut(&refarr_ss_ao, &pr_msg);
+            }
+        }
+
     }
 }
 
@@ -254,24 +305,6 @@ static void HandleTimedTurnDoneMsg()
     }
 }
 
-static void HandlePeriodicEvent()
-{
-    glob_count = 0;
-    // initialize read buffer
-    memcpy(read_buffer, default_vals, sizeof(read_buffer));
-
-    // Set GPIOs as output
-    gpioc.Mode = GPIO_MODE_OUTPUT_PP;
-    HAL_GPIO_Init(GPIOC, &gpioc);
-
-    // write GPIOs
-    GPIOC->BSRR = gpioc.Pin;
-
-    // start sensor read sequence
-    __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_CC1);
-    TIM11->CR1 |= 1;
-}
-
 static void HandleSensorRead()
 {
     if (STATE_LINE_FOLLOWING == state)
@@ -281,7 +314,7 @@ static void HandleSensorRead()
 
         for (uint8_t i = 0; i < 6; i++)
         {
-            // calibrateto val between 0 and 1000
+            // calibrate to val between 0 and 1000
             int32_t calmin = min_sensor_readings[i];
             int32_t calmax = max_sensor_readings[i];
             int32_t interval = calmax - calmin;
@@ -530,7 +563,7 @@ extern void REFARR_Init()
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
     HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1);
-    TIM11->CCR1 = 100;
+    TIM11->CCR1 = SENSOR_CHARGE_DELAY;
 
     // init timer 4: capture timer
     htim4.Instance = TIM4;
