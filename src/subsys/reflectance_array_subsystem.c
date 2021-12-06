@@ -26,17 +26,17 @@
 #define CALIBRATION_TIMED_TURN_DURATION 2000
 
 #define NOISE_THRESHOLD                      0
-#define ON_LINE_THRESHOLD                    400 // are sensors over line? FIXME: need to determine experimentally
+#define ON_LINE_THRESHOLD                    300 // are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)                   ((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)              ((val) > NOISE_THRESHOLD)
-#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD 5
+#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD 10
 #define MAX_READING                          3000
 #define MIDPOINT                             2500
 
 #define NOT_IN_INTERSECTION 0
 #define IN_INTERSECTION     1
 
-#define DRIVE_CTL_DEBOUNCE_COUNTS 5
+#define DRIVE_CTL_DEBOUNCE_COUNTS 2
 
 static TimedEventSimple_t sensor_read_periodic_event;
 static Message_t          sensor_read_periodic_msg = {.id = REFARR_PERIODIC_EVENT_MSG_ID,
@@ -53,10 +53,12 @@ static uint16_t       read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING, MAX_READING, MAX_READING,
                                          MAX_READING, MAX_READING, MAX_READING};
 
-static uint16_t max_sensor_readings[6] = {2881, 3532, 2420, 2440, 2910, 3310};
+static uint16_t max_sensor_readings[6] = {3883, 3058, 2712, 2734, 3101, 3809};
 static uint16_t min_sensor_readings[6] = {91, 105, 76, 88, 59, 94};
 
 static uint32_t last_val = 2500;
+
+static uint8_t glob_count = 0;
 
 static bool drive_control_loop_enabled = true;
 static bool left_intersection_enabled = true;
@@ -125,7 +127,6 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 {
-    static uint8_t glob_count = 0;
     if (htim->Instance == TIM4)
     {
         if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
@@ -255,6 +256,7 @@ static void HandleTimedTurnDoneMsg()
 
 static void HandlePeriodicEvent()
 {
+    glob_count = 0;
     // initialize read buffer
     memcpy(read_buffer, default_vals, sizeof(read_buffer));
 
@@ -274,6 +276,9 @@ static void HandleSensorRead()
 {
     if (STATE_LINE_FOLLOWING == state)
     {
+        uint32_t sum = 0;
+        uint32_t avg = 0;
+
         for (uint8_t i = 0; i < 6; i++)
         {
             // calibrateto val between 0 and 1000
@@ -297,19 +302,11 @@ static void HandleSensorRead()
             }
 
             sensor_values[i] = reading;
-        }
 
-        // get new actual position and send to drive
-        uint32_t sum = 0, avg = 0;
-
-        for (uint8_t i = 0; i < 6; i++)
-        {
-            uint32_t val = (uint32_t)(sensor_values[i]);
-
-            if (ABOVE_NOISE_THRESH(val))
+            if (ABOVE_NOISE_THRESH(reading))
             {
-                avg += val * i * 1000;
-                sum += val;
+                avg += reading * i * 1000;
+                sum += reading;
             }
         }
 
@@ -348,7 +345,8 @@ static void HandleSensorRead()
             dcmmsg.base.id = DRIVE_CTL_IN_MSG_ID;
             dcmmsg.base.msg_size = sizeof(DriveControlMessage_t);
 
-            if (!possibly_at_intersection)
+            if (!possibly_at_intersection /*(intersection_exit_debounce_count_current == 0 || intersection_debounce_count_current == 0)
+                && (current_line_state == NOT_IN_INTERSECTION && previous_line_state == NOT_IN_INTERSECTION)*/)
             {
                 last_val = (float)avg / (float)sum;
             }

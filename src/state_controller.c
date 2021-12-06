@@ -13,12 +13,18 @@
 #include "cmd/turn_cmd.h"
 #include "cmd/bay_dropoff_cmd.h"
 
+#define ZUMO_MAX_COUNT 2
+#define ZUMO_ID        1
+
 #define IDLE_STATE       0x1
 #define DISPATCHED_STATE 0x2
 
 #define TURN_SPEED_FW  0.55
 #define TURN_SPEED_REV -0.6
 #define MAX_BAY_COUNT  3
+
+static uint32_t dispatches_received = 0;
+static uint32_t dispatches_at_start = 0;
 
 static uint32_t state = IDLE_STATE;
 
@@ -28,6 +34,8 @@ static LineFollowCommand_t leave_idle_lf_cmd;
 static TurnCommand_t       aisle_1_turn_cmd;
 static BayDropoffCommand_t bay_dropoff_cmd;
 static TurnCommand_t       aisle_1_leave_cmd;
+
+static LineFollowCommand_t idle_lf_cmd;
 
 static void HandleDisptach(DispatchMessage_t* msg);
 
@@ -92,10 +100,30 @@ extern void StateController_Init()
 
 extern void StateControllerEventHandler(Message_t* msg)
 {
-    if (IDLE_STATE == state && SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
+    if (SM_DISPATCH_FROM_IDLE_MSG_ID == msg->id)
     {
-        state = DISPATCHED_STATE;
-        HandleDisptach((DispatchMessage_t*)msg);
+        if (IDLE_STATE == state)
+        {
+            if (ZUMO_ID == dispatches_received % ZUMO_MAX_COUNT)
+            {
+                state = DISPATCHED_STATE;
+                dispatches_at_start = dispatches_received;
+                HandleDisptach((DispatchMessage_t*)msg);
+            }
+            else
+            {
+                LineFollowCommandInit(&idle_lf_cmd,
+                                      REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
+                                          REFARR_RIGHT_SENSOR_ENABLE,
+                                      1, LINE_FOLLOW_MAX_BASE_VELOCITY, 0, NULL);
+                StateMachineInit(&state_machine, (Command_t*)&idle_lf_cmd);
+                StateMachineStart(&state_machine, NULL);
+            }
+        }
+        else
+        {
+            ++dispatches_received;
+        }
     }
     else
     {
@@ -103,14 +131,29 @@ extern void StateControllerEventHandler(Message_t* msg)
         // SM will handle message using current command
         if (StateMachineStep(&state_machine, msg, NULL))
         {
-            state = IDLE_STATE;
-            DriveOpenLoopControlMessage_t stop_msg;
-            stop_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
-            stop_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
-            stop_msg.percent_left = 0.0;
-            stop_msg.percent_right = 0.0;
+            if (DISPATCHED_STATE == state && dispatches_at_start < dispatches_received + ZUMO_ID)
+            {
+                LineFollowCommandInit(&idle_lf_cmd,
+                                      REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
+                                          REFARR_RIGHT_SENSOR_ENABLE,
+                                      dispatches_received - dispatches_at_start + ZUMO_ID,
+                                      LINE_FOLLOW_MAX_BASE_VELOCITY, 0, NULL);
 
-            MsgQueuePut(&drive_ss_ao, &stop_msg);
+                StateMachineInit(&state_machine, (Command_t*)&idle_lf_cmd);
+                StateMachineStart(&state_machine, NULL);
+                state = IDLE_STATE;
+            }
+            else
+            {
+                state = IDLE_STATE;
+                DriveOpenLoopControlMessage_t stop_msg;
+                stop_msg.base.id = DRIVE_OPEN_LOOP_MSG_ID;
+                stop_msg.base.msg_size = sizeof(DriveOpenLoopControlMessage_t);
+                stop_msg.percent_left = 0.0;
+                stop_msg.percent_right = 0.0;
+
+                MsgQueuePut(&drive_ss_ao, &stop_msg);
+            }
         }
     }
 }

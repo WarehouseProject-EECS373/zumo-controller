@@ -11,7 +11,7 @@
 #define DRIVE_DIR_FORWARD 1
 #define DRIVE_DIR_REVERSE -1
 
-#define OPEN_LOOP_TURN_DELAY_MS 10
+#define OPEN_LOOP_TURN_DELAY_MS 20
 
 typedef struct TurnTypeDirectionCfg_s
 {
