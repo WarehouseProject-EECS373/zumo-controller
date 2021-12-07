@@ -7,7 +7,8 @@
 
 #define TURN_AROUND_SPEED  0.5
 #define REVERSE_SPEED      -0.3
-#define REVERSE_DRIVE_TIME 300
+#define REVERSE_DRIVE_TIME_DROPOFF  200
+#define REVERSE_DRIVE_TIME_PICKUP   800
 
 static void     ToBayCommandStart(Command_t* cmd, void* instance_data);
 static bool     ToBayCommandOnMessage(Command_t* cmd, Message_t* msg, void* instance_data);
@@ -36,32 +37,50 @@ extern void ToBayCommandInit(ToBayCommand_t* cmd, uint32_t bay_id,
     cmd->base.end_behavior = COMMAND_ON_END_WAIT_FOR_END;
     cmd->base.next = next;
 
-    // turn into bay, drive until bay end
-    TurnCommandInit(&cmd->turn_in_cmd, GetTurnDirection(bay_id), 1, TURN_TYPE_FROM_TOP,
-                    TURN_SPEED_FW, TURN_SPEED_REV, (Command_t*)&cmd->em_cmd);
-
     bool em_mode;
+    uint8_t drive_in_line_counts;
+    uint32_t reverse_drive_time;
 
     if (TO_BAY_DROPOFF == mode)
     {
         em_mode = false;
+        drive_in_line_counts = 1;
+        reverse_drive_time = REVERSE_DRIVE_TIME_DROPOFF;
     }
     else
     {
         em_mode = true;
+        drive_in_line_counts = 2;
+        reverse_drive_time = REVERSE_DRIVE_TIME_PICKUP;
     }
 
-    ElectromagnetCommandInit(&cmd->em_cmd, em_mode, (Command_t*)&cmd->turn_around_cmd);
+    // turn into bay, drive until bay end
+    TurnCommandInit(&cmd->turn_in_cmd, GetTurnDirection(bay_id), drive_in_line_counts, TURN_TYPE_FROM_TOP,
+                    TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+
+    ElectromagnetCommandInit(&cmd->em_cmd, em_mode, NULL);
+
+    if (TO_BAY_DROPOFF == mode)
+    {
+        cmd->turn_in_cmd.base.next = (Command_t*)&cmd->em_cmd;
+        cmd->em_cmd.base.next = (Command_t*)&cmd->turn_around_cmd;
+        StateMachineInit(&cmd->state_machine, (Command_t*)&cmd->turn_in_cmd);
+    }
+    else
+    {
+        cmd->em_cmd.base.next = (Command_t*)&cmd->turn_in_cmd;
+        cmd->turn_in_cmd.base.next = (Command_t*)&cmd->turn_around_cmd;
+        StateMachineInit(&cmd->state_machine, (Command_t*)&cmd->em_cmd);
+    }
 
     // reverse, turn around, line follow until the aisle
     Turn180CommandInit(&cmd->turn_around_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, TURN_AROUND_SPEED,
-                       REVERSE_SPEED, REVERSE_DRIVE_TIME, (Command_t*)&cmd->turn_out_cmd);
+                       REVERSE_SPEED, reverse_drive_time, (Command_t*)&cmd->turn_out_cmd);
 
     // turn out of bay and drive
     TurnCommandInit(&cmd->turn_out_cmd, GetTurnDirection(bay_id), post_dropoff_intersection_count,
                     TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
-    StateMachineInit(&cmd->state_machine, (Command_t*)&cmd->turn_in_cmd);
 }
 
 static void ToBayCommandStart(Command_t* cmd, void* instance_data)
