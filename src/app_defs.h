@@ -145,6 +145,9 @@ typedef struct PropertyGetSetMessage_s
 #define DRIVE_CTL_TRACE_INIT_MSG_ID 0x85
 #define LINE_FOLLOW_TRACE_MSG_ID    0x86
 
+#define ELECTROMAGNET_ENABLE  0x400
+#define ELECTROMAGNET_DISABLE 0x401
+
 // main state machine
 #define SM_PERIODIC_EVENT_MSG_ID 0x100
 
@@ -250,6 +253,7 @@ struct Command_s
 #define COMMS_QUEUE_SIZE         8
 #define STATE_MACHINE_QUEUE_SIZE 16
 #define TEST_AO_QUEUE_SIZE       8
+#define EMAG_SS_QUEUE_SIZE       2
 
 #define WATCHDOG_AO_ID  0x0
 #define DRIVE_AO_ID     0x1
@@ -258,6 +262,7 @@ struct Command_s
 #define STATE_AO_ID     0x4
 #define REFARR_AO_ID    0x5
 #define TEST_AO_ID      0x6
+#define EMAG_AO_ID      0x7
 
 ACTIVE_OBJECT_EXTERN(watchdog_ao, HEARTBEAT_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(drive_ss_ao, DRIVE_SS_QUEUE_SIZE)
@@ -266,3 +271,4 @@ ACTIVE_OBJECT_EXTERN(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_EXTERN(test_ss_ao, TEST_AO_QUEUE_SIZE)
+ACTIVE_OBJECT_EXTERN(electromagnet_ss_ao, EMAG_SS_QUEUE_SIZE)

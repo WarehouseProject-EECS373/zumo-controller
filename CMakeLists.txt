@@ -55,6 +55,7 @@ set(PROJECT_SOURCES
     src/subsys/reflectance_array_subsystem.c
     src/subsys/comms_subsystem.c
     src/subsys/test_subsystem.c
+    src/subsys/electromagnet_subsystem.c
 
     src/cmd/drive_open_loop_cmd.c
     src/cmd/lf_cmd.c

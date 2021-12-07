@@ -15,6 +15,7 @@
 #include "subsys/reflectance_array_subsystem.h"
 #include "subsys/comms_subsystem.h"
 #include "subsys/test_subsystem.h"
+#include "subsys/electromagnet_subsystem.h"
 
 #include "trace.h"
 
@@ -39,6 +40,7 @@ ACTIVE_OBJECT_DECL(comms_ss_ao, COMMS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(state_ctl_ao, STATE_MACHINE_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(refarr_ss_ao, REFARR_SS_QUEUE_SIZE)
 ACTIVE_OBJECT_DECL(test_ss_ao, TEST_AO_QUEUE_SIZE)
+ACTIVE_OBJECT_DECL(electromagnet_ss_ao, EMAG_SS_QUEUE_SIZE)
 
 //*****************************************************************/
 // Application and local declarations
@@ -107,6 +109,7 @@ int main()
     REFARR_Init();
     ITCTL_Init();
     Comms_Init();
+    EMag_Init();
 
     TestSystemInit();
 
@@ -122,6 +125,7 @@ int main()
     AO_INIT(state_ctl_ao, 0, StateControllerEventHandler, STATE_MACHINE_QUEUE_SIZE, STATE_AO_ID);
     AO_INIT(refarr_ss_ao, 1, ReflectanceArrayEventHandler, REFARR_SS_QUEUE_SIZE, REFARR_AO_ID);
     AO_INIT(test_ss_ao, 1, TestSystemEventHandler, TEST_AO_QUEUE_SIZE, TEST_AO_ID);
+    AO_INIT(electromagnet_ss_ao, 3, ElectromagnetEventHandler, EMAG_SS_QUEUE_SIZE, EMAG_AO_ID);
 
     TimedEventSetup();
 

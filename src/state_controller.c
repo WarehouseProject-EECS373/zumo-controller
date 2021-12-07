@@ -156,10 +156,10 @@ extern void StateControllerEventHandler(Message_t* msg)
                 {
                     // go to next available queue position when done
                     LineFollowCommandInit(&idle_arrive_lf_cmd,
-                                      REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
-                                          REFARR_RIGHT_SENSOR_ENABLE,
-                                      dispatches_received,
-                                      LINE_FOLLOW_MAX_BASE_VELOCITY, 0, NULL);
+                                          REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |
+                                              REFARR_RIGHT_SENSOR_ENABLE,
+                                          dispatches_received, LINE_FOLLOW_MAX_BASE_VELOCITY, 0,
+                                          NULL);
 
                     StateMachineInit(&state_machine, (Command_t*)&idle_arrive_lf_cmd);
                     StateMachineStart(&state_machine, NULL);

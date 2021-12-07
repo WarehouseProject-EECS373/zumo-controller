@@ -29,7 +29,7 @@
 #define ON_LINE_THRESHOLD                    300 // are sensors over line? FIXME: need to determine experimentally
 #define ABOVE_LINE(sensor)                   ((sensor) > ON_LINE_THRESHOLD)
 #define ABOVE_NOISE_THRESH(val)              ((val) > NOISE_THRESHOLD)
-#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD 5 
+#define REFLECTANCE_ARRAY_LINE_FOLLOW_PERIOD 5
 #define MAX_READING                          4000
 #define SENSOR_CHARGE_DELAY                  50
 #define MIDPOINT                             2500
@@ -109,8 +109,8 @@ __attribute__((__interrupt__)) extern void TIM5_IRQHandler()
 
 static void HandlePeriodicEvent()
 {
-    //glob_count = 0;
-    // initialize read buffer
+    // glob_count = 0;
+    //  initialize read buffer
     memcpy(read_buffer, default_vals, sizeof(read_buffer));
 
     // Set GPIOs as output
@@ -130,9 +130,9 @@ static void HandlePeriodicEvent()
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim)
 {
     if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    {   
+    {
         TIM11->CR1 &= ~((uint32_t)1);
-        if(TIM11->CCR1 == SENSOR_CHARGE_DELAY)
+        if (TIM11->CCR1 == SENSOR_CHARGE_DELAY)
         {
             if (glob_count > 0)
             {
@@ -168,11 +168,11 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim)
                 TIM5->CNT = 0;
 
                 memcpy(sensor_values, read_buffer, sizeof(sensor_values));
-                Message_t pr_msg = {.id = REFARR_PROCESS_READING_MSG_ID, .msg_size = sizeof(Message_t)};
+                Message_t pr_msg = {.id = REFARR_PROCESS_READING_MSG_ID,
+                                    .msg_size = sizeof(Message_t)};
                 MsgQueuePut(&refarr_ss_ao, &pr_msg);
             }
         }
-
     }
 }
 
