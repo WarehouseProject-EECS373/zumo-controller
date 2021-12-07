@@ -12,4 +12,4 @@ typedef struct ElectromagnetCommand_s
     Message_t em_msg;
 } ElectromagnetCommand_t;
 
-extern void ElectrmagnetCommandInit(ElectromagnetCommand_t* cmd, bool is_on, Command_t* next);
+extern void ElectromagnetCommandInit(ElectromagnetCommand_t* cmd, bool is_on, Command_t* next);

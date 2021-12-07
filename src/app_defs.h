@@ -67,6 +67,7 @@ typedef struct DispatchMessage_s
     Message_t base;
     uint8_t   bay_id;
     uint8_t   aisle_id;
+    uint8_t   is_pickup;
 } DispatchMessage_t;
 
 typedef struct LineFollowMessage_s
@@ -228,6 +229,9 @@ typedef struct PropertyGetSetMessage_s
 #define TURN_DIR_RIGHT      0x1
 
 #define TIMED_EVENT_DONE_MSG_ID 0x999
+
+#define TO_BAY_DROPOFF 0x0
+#define TO_BAY_PICKUP  0x1
 
 typedef struct Command_s Command_t;
 

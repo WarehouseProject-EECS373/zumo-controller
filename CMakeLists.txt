@@ -61,8 +61,9 @@ set(PROJECT_SOURCES
     src/cmd/lf_cmd.c
     src/cmd/turn_cmd.c
     src/cmd/turn180_cmd.c
-    src/cmd/bay_dropoff_cmd.c
+    src/cmd/to_bay_cmd.c
     src/cmd/delay_cmd.c
+    src/cmd/electromagnet_cmd.c
 
 )
 

@@ -4,11 +4,11 @@
 
 #include <os.h>
 
-static void ElectrmagnetCommandStart(Command_t* cmd, void* instance_data);
+static void ElectromagnetCommandStart(Command_t* cmd, void* instance_data);
 
-extern void ElectrmagnetCommandInit(ElectromagnetCommand_t* cmd, bool is_on, Command_t* next)
+extern void ElectromagnetCommandInit(ElectromagnetCommand_t* cmd, bool is_on, Command_t* next)
 {
-    cmd->base.on_Start = ElectrmagnetCommandStart;
+    cmd->base.on_Start = ElectromagnetCommandStart;
     cmd->base.on_Message = NULL;
     cmd->base.on_End = NULL;
     cmd->base.end_behavior = COMMAND_ON_END_INSTANT;
@@ -29,7 +29,7 @@ extern void ElectrmagnetCommandInit(ElectromagnetCommand_t* cmd, bool is_on, Com
     cmd->em_msg = msg;
 }
 
-static void ElectrmagnetCommandStart(Command_t* cmd, void* instance_data)
+static void ElectromagnetCommandStart(Command_t* cmd, void* instance_data)
 {
     UNUSED(instance_data);
 

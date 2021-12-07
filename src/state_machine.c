@@ -12,7 +12,7 @@ extern void StateMachineInit(StateMachine_t* sm, Command_t* start)
 
 extern void StateMachineStart(StateMachine_t* sm, void* instance_data)
 {
-    if (!sm)
+    if (!sm || !sm->current)
     {
         return;
     }

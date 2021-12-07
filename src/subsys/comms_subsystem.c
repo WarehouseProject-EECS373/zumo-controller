@@ -31,7 +31,7 @@
 #define EXPECTED_LINE_FOLLOW_LENGTH 6
 #define EXPECTED_180T_LENGTH        26
 #define EXPECTED_TURN_LENGTH        14
-#define EXPECTED_DISPATCH_LENGTH    3
+#define EXPECTED_DISPATCH_LENGTH    4
 #define EXPECTED_GET_P_LENGTH       3
 #define EXPECTED_SET_P_LENGTH       7
 
@@ -103,6 +103,7 @@ static STCPStatus_t UnpackMessage(void* buffer, uint16_t length, void* instance_
         dmsg.base.msg_size = sizeof(DispatchMessage_t);
         dmsg.aisle_id = payload[AISLE_ID_IDX];
         dmsg.bay_id = payload[BAY_ID_IDX];
+        dmsg.is_pickup = payload[BAY_ID_IDX + 1];
 
         MsgQueuePut(&state_ctl_ao, &dmsg);
     }

@@ -20,16 +20,17 @@ extern void EMag_Init()
     gpio_cfg.Speed = GPIO_SPEED_LOW;
 
     HAL_GPIO_Init(EMAG_PORT, &gpio_cfg);
+    HAL_GPIO_WritePin(EMAG_PORT, EMAG_PIN, GPIO_PIN_RESET);
 }
 
 extern void ElectromagnetEventHandler(Message_t* msg)
 {
     if (ELECTROMAGNET_DISABLE == msg->id)
     {
-        HAL_GPIO_WritePin(EMAG_PORT, EMAG_PIN, 1);
+        HAL_GPIO_WritePin(EMAG_PORT, EMAG_PIN, GPIO_PIN_RESET);
     }
     else if (ELECTROMAGNET_ENABLE == msg->id)
     {
-        HAL_GPIO_WritePin(EMAG_PORT, EMAG_PIN, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(EMAG_PORT, EMAG_PIN, 1);
     }
 }
