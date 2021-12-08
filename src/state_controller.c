@@ -15,7 +15,7 @@
 #include "cmd/electromagnet_cmd.h"
 
 #define ZUMO_MAX_COUNT 2
-#define ZUMO_ID        0
+#define ZUMO_ID        1
 
 #define IDLE_STATE       0x1
 #define DISPATCHED_STATE 0x2
@@ -40,12 +40,9 @@ static TurnCommand_t       aisle_1_turn_cmd;
 static TurnCommand_t       return_to_idle_left_turn_cmd;
 static ToBayCommand_t      to_bay_cmd;
 static TurnCommand_t       aisle_1_leave_cmd;
-
 static ElectromagnetCommand_t em_disable_out_bay_cmd;
 static Turn180Command_t out_bay_turn_cmd;
-
 static TurnCommand_t turn_from_out_bay_cmd;
-
 static LineFollowCommand_t idle_lf_cmd;
 static LineFollowCommand_t idle_arrive_lf_cmd;
 
@@ -96,7 +93,7 @@ static void Aisle2Dropoff(uint8_t bay_id, uint8_t bay_index)
 
     // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for
     // idle position)
-    ToBayCommandInit(&to_bay_cmd, bay_id, 4 - bay_index + 2, TO_BAY_DROPOFF, (Command_t*)&return_to_idle_left_turn_cmd);
+    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2, TO_BAY_DROPOFF, (Command_t*)&return_to_idle_left_turn_cmd);
     
     // don't go to out bay
     TurnCommandInit(&return_to_idle_left_turn_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
@@ -128,7 +125,7 @@ static void Aisle1Pickup(uint8_t bay_id, uint8_t bay_index)
 
     ElectromagnetCommandInit(&em_disable_out_bay_cmd, false, (Command_t*)&out_bay_turn_cmd);
     
-    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, TURN_SPEED_REV, 600, (Command_t*)&turn_from_out_bay_cmd);
+    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600, (Command_t*)&turn_from_out_bay_cmd);
 
     TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
@@ -144,11 +141,11 @@ static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index)
 
     // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for
     // idle position), +2 for out bay stop and return to idle intersection
-    ToBayCommandInit(&to_bay_cmd, bay_id, 4 - bay_index + 2 + 2, TO_BAY_PICKUP, NULL);
+    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2 + 1, TO_BAY_PICKUP, (Command_t*)&em_disable_out_bay_cmd);
     
     ElectromagnetCommandInit(&em_disable_out_bay_cmd, false, (Command_t*)&out_bay_turn_cmd);
     
-    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, TURN_SPEED_REV, 600, (Command_t*)&turn_from_out_bay_cmd);
+    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600, (Command_t*)&turn_from_out_bay_cmd);
 
     TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
@@ -219,6 +216,7 @@ extern void StateControllerEventHandler(Message_t* msg)
             {
                 // dispatch
                 controller_state = DISPATCHED_STATE;
+
                 HandleDisptach((DispatchMessage_t*)msg);
 
                 // count the number of dispatch messages received while dropping off
