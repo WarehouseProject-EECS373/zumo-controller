@@ -24,8 +24,8 @@
 #define TURN_SPEED_REV -0.6
 #define MAX_BAY_COUNT  3
 
-
-#define LF_DRIVE_CTL_MODE (REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE)
+#define LF_DRIVE_CTL_MODE                                                                          \
+    (REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE | REFARR_RIGHT_SENSOR_ENABLE)
 
 static uint16_t queue_position = ZUMO_ID;
 static uint32_t dispatches_received = 0;
@@ -35,20 +35,19 @@ static uint32_t controller_state = IDLE_STATE;
 static StateMachine_t state_machine;
 
 static ElectromagnetCommand_t em_pickup_cmd;
-static LineFollowCommand_t leave_idle_lf_cmd;
-static TurnCommand_t       aisle_1_turn_cmd;
-static TurnCommand_t       return_to_idle_left_turn_cmd;
-static ToBayCommand_t      to_bay_cmd;
-static TurnCommand_t       aisle_1_leave_cmd;
+static LineFollowCommand_t    leave_idle_lf_cmd;
+static TurnCommand_t          aisle_1_turn_cmd;
+static TurnCommand_t          return_to_idle_left_turn_cmd;
+static ToBayCommand_t         to_bay_cmd;
+static TurnCommand_t          aisle_1_leave_cmd;
 static ElectromagnetCommand_t em_disable_out_bay_cmd;
-static Turn180Command_t out_bay_turn_cmd;
-static TurnCommand_t turn_from_out_bay_cmd;
-static LineFollowCommand_t idle_lf_cmd;
-static LineFollowCommand_t idle_arrive_lf_cmd;
+static Turn180Command_t       out_bay_turn_cmd;
+static TurnCommand_t          turn_from_out_bay_cmd;
+static LineFollowCommand_t    idle_lf_cmd;
+static LineFollowCommand_t    idle_arrive_lf_cmd;
 
 static void HandleDisptach(DispatchMessage_t* msg);
 static void StopDrive();
-
 
 static void Aisle1Dropoff(uint8_t bay_id, uint8_t bay_index);
 static void Aisle2Dropoff(uint8_t bay_id, uint8_t bay_index);
@@ -58,27 +57,27 @@ static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index);
 static void Aisle1Dropoff(uint8_t bay_id, uint8_t bay_index)
 {
     ElectromagnetCommandInit(&em_pickup_cmd, true, (Command_t*)&leave_idle_lf_cmd);
-    
+
     // line follow until first intersection (count = 1)
-    LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1,
-                              LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&aisle_1_turn_cmd);
+    LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1, LINE_FOLLOW_MAX_BASE_VELOCITY,
+                          0, (Command_t*)&aisle_1_turn_cmd);
 
     // turn left at first intersection, drive until bay index
-    TurnCommandInit(&aisle_1_turn_cmd, TURN_DIR_LEFT, bay_index, TURN_TYPE_FROM_TOP,
-                        TURN_SPEED_FW, TURN_SPEED_REV, (Command_t*)&to_bay_cmd);
+    TurnCommandInit(&aisle_1_turn_cmd, TURN_DIR_LEFT, bay_index, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
+                    TURN_SPEED_REV, (Command_t*)&to_bay_cmd);
 
     // dropoff, drive until last intersection in aisle (remaining bays + 1 for exit
     // intersection)
     ToBayCommandInit(&to_bay_cmd, bay_id, 2 - bay_index + 1, TO_BAY_DROPOFF,
-                         (Command_t*)&aisle_1_leave_cmd);
+                     (Command_t*)&aisle_1_leave_cmd);
 
     // start turn, then drive until idle position (1 intersection)
     TurnCommandInit(&aisle_1_leave_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_BASE, TURN_SPEED_FW,
-                        TURN_SPEED_REV, (Command_t*)&return_to_idle_left_turn_cmd);
+                    TURN_SPEED_REV, (Command_t*)&return_to_idle_left_turn_cmd);
 
     // don't go to out bay
-    TurnCommandInit(&return_to_idle_left_turn_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
-                        TURN_SPEED_REV, NULL);
+    TurnCommandInit(&return_to_idle_left_turn_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_TOP,
+                    TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
     StateMachineInit(&state_machine, (Command_t*)&em_pickup_cmd);
 }
@@ -86,75 +85,78 @@ static void Aisle1Dropoff(uint8_t bay_id, uint8_t bay_index)
 static void Aisle2Dropoff(uint8_t bay_id, uint8_t bay_index)
 {
     ElectromagnetCommandInit(&em_pickup_cmd, true, (Command_t*)&leave_idle_lf_cmd);
-    
+
     // start line following, arrive at bay (1 + bay_index intersections)
     LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1 + bay_index,
-                              LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&to_bay_cmd);
+                          LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&to_bay_cmd);
 
     // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for
     // idle position)
-    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2, TO_BAY_DROPOFF, (Command_t*)&return_to_idle_left_turn_cmd);
-    
-    // don't go to out bay
-    TurnCommandInit(&return_to_idle_left_turn_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
-                        TURN_SPEED_REV, NULL);
+    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2, TO_BAY_DROPOFF,
+                     (Command_t*)&return_to_idle_left_turn_cmd);
 
+    // don't go to out bay
+    TurnCommandInit(&return_to_idle_left_turn_cmd, TURN_DIR_LEFT, 1, TURN_TYPE_FROM_TOP,
+                    TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
     StateMachineInit(&state_machine, (Command_t*)&em_pickup_cmd);
 }
 
 static void Aisle1Pickup(uint8_t bay_id, uint8_t bay_index)
 {
-    
     // line follow until first intersection (count = 1)
-    LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1,
-                              LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&aisle_1_turn_cmd);
+    LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1, LINE_FOLLOW_MAX_BASE_VELOCITY,
+                          0, (Command_t*)&aisle_1_turn_cmd);
 
     // turn left at first intersection, drive until bay index
-    TurnCommandInit(&aisle_1_turn_cmd, TURN_DIR_LEFT, bay_index, TURN_TYPE_FROM_TOP,
-                        TURN_SPEED_FW, TURN_SPEED_REV, (Command_t*)&to_bay_cmd);
+    TurnCommandInit(&aisle_1_turn_cmd, TURN_DIR_LEFT, bay_index, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
+                    TURN_SPEED_REV, (Command_t*)&to_bay_cmd);
 
     // dropoff, drive until last intersection in aisle (remaining bays + 1 for exit
     // intersection)
     ToBayCommandInit(&to_bay_cmd, bay_id, 2 - bay_index + 1, TO_BAY_PICKUP,
-                         (Command_t*)&aisle_1_leave_cmd);
+                     (Command_t*)&aisle_1_leave_cmd);
 
     // start turn, then drive until idle position (1 intersection)
     TurnCommandInit(&aisle_1_leave_cmd, TURN_DIR_LEFT, 2, TURN_TYPE_FROM_BASE, TURN_SPEED_FW,
-                        TURN_SPEED_REV, (Command_t*)&em_disable_out_bay_cmd);
+                    TURN_SPEED_REV, (Command_t*)&em_disable_out_bay_cmd);
 
     ElectromagnetCommandInit(&em_disable_out_bay_cmd, false, (Command_t*)&out_bay_turn_cmd);
-    
-    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600, (Command_t*)&turn_from_out_bay_cmd);
 
-    TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600,
+                       (Command_t*)&turn_from_out_bay_cmd);
+
+    TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
+                    TURN_SPEED_REV, NULL);
 
     StateMachineInit(&state_machine, (Command_t*)&leave_idle_lf_cmd);
 }
 
 static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index)
 {
-    
     // start line following, arrive at bay (1 + bay_index intersections)
     LineFollowCommandInit(&leave_idle_lf_cmd, LF_DRIVE_CTL_MODE, 1 + bay_index,
-                              LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&to_bay_cmd);
+                          LINE_FOLLOW_MAX_BASE_VELOCITY, 0, (Command_t*)&to_bay_cmd);
 
     // dropoff and exit, drive until idle (remaining bays in aisle + 1 for aisle 1 exit + 1 for
     // idle position), +2 for out bay stop and return to idle intersection
-    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2 + 1, TO_BAY_PICKUP, (Command_t*)&em_disable_out_bay_cmd);
-    
-    ElectromagnetCommandInit(&em_disable_out_bay_cmd, false, (Command_t*)&out_bay_turn_cmd);
-    
-    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600, (Command_t*)&turn_from_out_bay_cmd);
+    ToBayCommandInit(&to_bay_cmd, bay_id, 3 - bay_index + 2 + 1, TO_BAY_PICKUP,
+                     (Command_t*)&em_disable_out_bay_cmd);
 
-    TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+    ElectromagnetCommandInit(&em_disable_out_bay_cmd, false, (Command_t*)&out_bay_turn_cmd);
+
+    Turn180CommandInit(&out_bay_turn_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, 0.5, -0.3, 600,
+                       (Command_t*)&turn_from_out_bay_cmd);
+
+    TurnCommandInit(&turn_from_out_bay_cmd, TURN_DIR_RIGHT, 1, TURN_TYPE_FROM_TOP, TURN_SPEED_FW,
+                    TURN_SPEED_REV, NULL);
 
     StateMachineInit(&state_machine, (Command_t*)&leave_idle_lf_cmd);
 }
 
 static void HandleDisptach(DispatchMessage_t* msg)
 {
-    //enable drive
+    // enable drive
     Message_t drive_en_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
     MsgQueuePut(&drive_ss_ao, &drive_en_msg);
 
@@ -190,7 +192,6 @@ static void HandleDisptach(DispatchMessage_t* msg)
             Aisle2Dropoff(bay_id, bay_index);
         }
     }
-
 
     StateMachineStart(&state_machine, NULL);
 }

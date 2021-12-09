@@ -4,9 +4,9 @@
 
 #include <os.h>
 
-static void ZoneLogCommandStart(Command_t *cmd, void* instance_data);
+static void ZoneLogCommandStart(Command_t* cmd, void* instance_data);
 
-extern void ZoneLogCommandInit(ZoneLogCommand_t *cmd, uint8_t aisle, Command_t *next)
+extern void ZoneLogCommandInit(ZoneLogCommand_t* cmd, uint8_t aisle, Command_t* next)
 {
     cmd->base.on_Start = ZoneLogCommandStart;
     cmd->base.on_Message = NULL;
@@ -21,7 +21,7 @@ extern void ZoneLogCommandInit(ZoneLogCommand_t *cmd, uint8_t aisle, Command_t *
     cmd->msg.payload[1] = aisle;
 }
 
-static void ZoneLogCommandStart(Command_t *cmd, void* instance_data)
+static void ZoneLogCommandStart(Command_t* cmd, void* instance_data)
 {
     UNUSED(instance_data);
     MsgQueuePut(&comms_ss_ao, (UartSmallPacketMessage_t*)cmd);

@@ -5,10 +5,10 @@
 #define TURN_SPEED_FW  0.55
 #define TURN_SPEED_REV -0.6
 
-#define TURN_AROUND_SPEED  0.5
-#define REVERSE_SPEED      -0.3
-#define REVERSE_DRIVE_TIME_DROPOFF  200
-#define REVERSE_DRIVE_TIME_PICKUP   600
+#define TURN_AROUND_SPEED          0.5
+#define REVERSE_SPEED              -0.3
+#define REVERSE_DRIVE_TIME_DROPOFF 200
+#define REVERSE_DRIVE_TIME_PICKUP  600
 
 static void     ToBayCommandStart(Command_t* cmd, void* instance_data);
 static bool     ToBayCommandOnMessage(Command_t* cmd, Message_t* msg, void* instance_data);
@@ -37,8 +37,8 @@ extern void ToBayCommandInit(ToBayCommand_t* cmd, uint32_t bay_id,
     cmd->base.end_behavior = COMMAND_ON_END_WAIT_FOR_END;
     cmd->base.next = next;
 
-    bool em_mode;
-    uint8_t drive_in_line_counts;
+    bool     em_mode;
+    uint8_t  drive_in_line_counts;
     uint32_t reverse_drive_time;
 
     if (TO_BAY_DROPOFF == mode)
@@ -55,8 +55,8 @@ extern void ToBayCommandInit(ToBayCommand_t* cmd, uint32_t bay_id,
     }
 
     // turn into bay, drive until bay end
-    TurnCommandInit(&cmd->turn_in_cmd, GetTurnDirection(bay_id), drive_in_line_counts, TURN_TYPE_FROM_TOP,
-                    TURN_SPEED_FW, TURN_SPEED_REV, NULL);
+    TurnCommandInit(&cmd->turn_in_cmd, GetTurnDirection(bay_id), drive_in_line_counts,
+                    TURN_TYPE_FROM_TOP, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
 
     ElectromagnetCommandInit(&cmd->em_cmd, em_mode, NULL);
 
@@ -92,7 +92,6 @@ extern void ToBayCommandInit(ToBayCommand_t* cmd, uint32_t bay_id,
     // turn out of bay and drive
     TurnCommandInit(&cmd->turn_out_cmd, GetTurnDirection(bay_id), post_dropoff_intersection_count,
                     TURN_TYPE_FROM_BASE, TURN_SPEED_FW, TURN_SPEED_REV, NULL);
-
 }
 
 static void ToBayCommandStart(Command_t* cmd, void* instance_data)
