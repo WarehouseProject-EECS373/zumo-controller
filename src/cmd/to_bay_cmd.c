@@ -75,7 +75,19 @@ extern void ToBayCommandInit(ToBayCommand_t* cmd, uint32_t bay_id,
 
     // reverse, turn around, line follow until the aisle
     Turn180CommandInit(&cmd->turn_around_cmd, TURN_DIR_LEFT, TURN_TYPE_180_LEFT, TURN_AROUND_SPEED,
-                       REVERSE_SPEED, reverse_drive_time, (Command_t*)&cmd->turn_out_cmd);
+                       REVERSE_SPEED, reverse_drive_time, (Command_t*)&cmd->zone_log_cmd);
+    uint8_t aisle;
+
+    if (0 == bay_id % 2)
+    {
+        aisle = 2;
+    }
+    else
+    {
+        aisle = 1;
+    }
+
+    ZoneLogCommandInit(&cmd->zone_log_cmd, aisle, (Command_t*)&cmd->turn_out_cmd);
 
     // turn out of bay and drive
     TurnCommandInit(&cmd->turn_out_cmd, GetTurnDirection(bay_id), post_dropoff_intersection_count,

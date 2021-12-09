@@ -87,6 +87,7 @@ typedef struct PropertyGetSetMessage_s
     uint8_t   value[4];
 } PropertyGetSetMessage_t;
 
+
 //*****************************************************************/
 // MESSAGE IDs
 //*****************************************************************/
@@ -163,6 +164,8 @@ typedef struct PropertyGetSetMessage_s
 #define MSG_P_GET_RESPONSE_ID 0x11
 
 #define MSG_P_SET_ID 0x20
+
+#define MSG_AISLE_FREE 0x30
 
 #define GET_PROPERTY_MSG_ID 0x220
 #define SET_PROPERTY_MSG_ID 0x221

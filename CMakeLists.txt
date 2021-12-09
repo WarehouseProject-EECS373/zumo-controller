@@ -64,7 +64,7 @@ set(PROJECT_SOURCES
     src/cmd/to_bay_cmd.c
     src/cmd/delay_cmd.c
     src/cmd/electromagnet_cmd.c
-
+    src/cmd/zone_log_cmd.c
 )
 
 set(STM_SOURCES
