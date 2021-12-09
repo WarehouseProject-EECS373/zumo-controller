@@ -154,6 +154,10 @@ static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index)
 
 static void HandleDisptach(DispatchMessage_t* msg)
 {
+    //enable drive
+    Message_t drive_en_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
+    MsgQueuePut(&drive_ss_ao, &drive_en_msg);
+
     uint8_t aisle_id = msg->aisle_id;
     uint8_t bay_id = msg->bay_id;
     uint8_t is_pickup = msg->is_pickup;
