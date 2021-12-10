@@ -11,7 +11,7 @@ extern void ZoneLogCommandInit(ZoneLogCommand_t* cmd, uint8_t aisle, Command_t* 
     cmd->base.on_Start = ZoneLogCommandStart;
     cmd->base.on_Message = NULL;
     cmd->base.on_End = NULL;
-    cmd->base.end_behavior = COMMAND_ON_END_WAIT_FOR_END;
+    cmd->base.end_behavior = COMMAND_ON_END_INSTANT;
     cmd->base.next = next;
 
     cmd->msg.base.id = UART_SMALL_PACKET_MSG_ID;

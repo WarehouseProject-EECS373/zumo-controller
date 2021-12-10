@@ -14,8 +14,8 @@
 #include "cmd/to_bay_cmd.h"
 #include "cmd/electromagnet_cmd.h"
 
-#define ZUMO_MAX_COUNT 2
-#define ZUMO_ID        1
+#define ZUMO_MAX_COUNT 4
+#define ZUMO_ID        3
 
 #define IDLE_STATE       0x1
 #define DISPATCHED_STATE 0x2
@@ -45,6 +45,8 @@ static Turn180Command_t       out_bay_turn_cmd;
 static TurnCommand_t          turn_from_out_bay_cmd;
 static LineFollowCommand_t    idle_lf_cmd;
 static LineFollowCommand_t    idle_arrive_lf_cmd;
+
+static Message_t drive_en_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
 
 static void HandleDisptach(DispatchMessage_t* msg);
 static void StopDrive();
@@ -156,9 +158,6 @@ static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index)
 
 static void HandleDisptach(DispatchMessage_t* msg)
 {
-    // enable drive
-    Message_t drive_en_msg = {.id = DRIVE_ENABLE_MSG_ID, .msg_size = sizeof(Message_t)};
-    MsgQueuePut(&drive_ss_ao, &drive_en_msg);
 
     uint8_t aisle_id = msg->aisle_id;
     uint8_t bay_id = msg->bay_id;
@@ -219,6 +218,9 @@ extern void StateControllerEventHandler(Message_t* msg)
         {
             if (0 == queue_position)
             {
+                // enable drive
+                MsgQueuePut(&drive_ss_ao, &drive_en_msg);
+
                 // dispatch
                 controller_state = DISPATCHED_STATE;
 
@@ -229,6 +231,9 @@ extern void StateControllerEventHandler(Message_t* msg)
             }
             else
             {
+                // enable drive
+                MsgQueuePut(&drive_ss_ao, &drive_en_msg);
+
                 // advance to next queue position
                 LineFollowCommandInit(&idle_lf_cmd,
                                       REFARR_DRIVE_CTL_ENABLE | REFARR_LEFT_SENSOR_ENABLE |

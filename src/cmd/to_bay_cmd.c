@@ -6,9 +6,9 @@
 #define TURN_SPEED_REV -0.6
 
 #define TURN_AROUND_SPEED          0.5
-#define REVERSE_SPEED              -0.3
-#define REVERSE_DRIVE_TIME_DROPOFF 200
-#define REVERSE_DRIVE_TIME_PICKUP  600
+#define REVERSE_SPEED              -0.325
+#define REVERSE_DRIVE_TIME_DROPOFF 350
+#define REVERSE_DRIVE_TIME_PICKUP  750
 
 static void     ToBayCommandStart(Command_t* cmd, void* instance_data);
 static bool     ToBayCommandOnMessage(Command_t* cmd, Message_t* msg, void* instance_data);
