@@ -54,8 +54,8 @@ static uint16_t       read_buffer[6];
 static const uint16_t default_vals[6] = {MAX_READING, MAX_READING, MAX_READING,
                                          MAX_READING, MAX_READING, MAX_READING};
 
-static uint16_t max_sensor_readings[6] = {3883, 3058, 2712, 2734, 3101, 3809};
-static uint16_t min_sensor_readings[6] = {91, 105, 76, 88, 59, 94};
+static uint16_t max_sensor_readings[6] = {3313, 2621, 1934, 1707, 1721, 1764};
+static uint16_t min_sensor_readings[6] = {71, 65, 55, 68, 106, 148};
 
 static uint32_t last_val = 2500;
 

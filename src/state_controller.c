@@ -14,8 +14,8 @@
 #include "cmd/to_bay_cmd.h"
 #include "cmd/electromagnet_cmd.h"
 
-#define ZUMO_MAX_COUNT 4
-#define ZUMO_ID        3
+#define ZUMO_MAX_COUNT 3
+#define ZUMO_ID        2
 
 #define IDLE_STATE       0x1
 #define DISPATCHED_STATE 0x2
