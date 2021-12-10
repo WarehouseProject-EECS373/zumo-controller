@@ -158,7 +158,6 @@ static void Aisle2Pickup(uint8_t bay_id, uint8_t bay_index)
 
 static void HandleDisptach(DispatchMessage_t* msg)
 {
-
     uint8_t aisle_id = msg->aisle_id;
     uint8_t bay_id = msg->bay_id;
     uint8_t is_pickup = msg->is_pickup;
